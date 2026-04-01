@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { 
   Plus, Package, DollarSign, ShoppingBag, TrendingUp,
-  Edit, Trash2, Search, Filter
+  Edit, Trash2, Search
 } from 'lucide-react';
 import { useProductStore, useAuthStore, useUIStore, useOrderStore } from '@/store';
 import { Button } from '@/components/ui/button';
