@@ -30,7 +30,7 @@ function App() {
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
         const email = session.user.email ?? '';
         useAuthStore.setState({
           isAuthenticated: true,
@@ -66,7 +66,7 @@ function App() {
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
-            .single();
+            .maybeSingle();
 
           const email = session.user.email ?? '';
           authStore.updateProfile({

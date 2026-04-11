@@ -37,7 +37,10 @@ export const useAuthStore = create<AuthState>()(
         
         let profileData = null;
         if (data.user) {
-          const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+          const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
+            if (profileError) {
+              console.warn('Profile fetch error:', profileError);
+            }
           profileData = profile;
         }
 
