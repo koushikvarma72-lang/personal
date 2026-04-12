@@ -32,6 +32,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string, role?: 'buyer' | 'seller') => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
+          console.error("SIGNUP ERROR:", error);
           throw new Error(error.message);
         }
         
