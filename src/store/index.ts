@@ -29,7 +29,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string, role?: 'buyer' | 'seller') => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
           throw new Error(error.message);
@@ -37,18 +37,34 @@ export const useAuthStore = create<AuthState>()(
         
         let profileData = null;
         if (data.user) {
-          const { data: profile, error: profileError } = await supabase.from('profiles').select('*').eq('id', data.user.id).maybeSingle();
-            if (profileError) {
-              console.warn('Profile fetch error:', profileError);
-            }
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.warn('Profile fetch error:', profileError);
+          }
+
           profileData = profile;
+
+          // ❌ STOP if profile does not exist
+          if (!profileData) {
+            throw new Error("User profile not found. Please register again.");
+          }
+
+          // ❌ STOP if role mismatch
+          if (role && profileData.role !== role) {
+            throw new Error(`You are not registered as a ${role}`);
+          }
         }
 
         const user: User = {
           id: data.user.id,
           email: data.user.email!,
           name: profileData?.name || email.split('@')[0],
-          role: profileData?.role || 'buyer',
+          role: profileData.role,
           avatar: profileData?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
           createdAt: new Date(data.user.created_at || Date.now()),
         };
