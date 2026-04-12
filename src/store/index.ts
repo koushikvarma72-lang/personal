@@ -48,7 +48,8 @@ export const useAuthStore = create<AuthState>()(
           }
 
           profileData = profile;
-
+          console.log("Selected role:", role);
+          console.log("DB role:", profileData?.role);
           // ❌ STOP if profile does not exist
           if (!profileData) {
             throw new Error("User profile not found. Please register again.");
