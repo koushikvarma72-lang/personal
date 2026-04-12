@@ -37,7 +37,7 @@ export function LoginPage() {
         showToast(`Welcome back! Logged in as ${loginType}`, 'success');
         navigate(from);
       }
-    }catch (error: any) {
+    } catch (error: any) {
       console.error("LOGIN ERROR:", error);
       showToast(error.message || 'Login failed', 'error');
     } finally {
