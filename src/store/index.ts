@@ -99,6 +99,22 @@ export const useAuthStore = create<AuthState>()(
         }
 
         if (data.user) {
+          // ✅ INSERT INTO profiles table (THIS IS THE FIX)
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: data.user.id,
+                name,
+                role,
+                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+              }
+            ]);
+
+          if (profileError) {
+            throw new Error(profileError.message);
+          }
+
           const user: User = {
             id: data.user.id,
             email: data.user.email!,
@@ -107,6 +123,7 @@ export const useAuthStore = create<AuthState>()(
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
             createdAt: new Date(data.user.created_at || Date.now()),
           };
+
           set({ user, isAuthenticated: true });
         }
         return true;
