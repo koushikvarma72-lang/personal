@@ -21,7 +21,6 @@ export function LoginPage() {
   const [loginType, setLoginType] = useState<'buyer' | 'seller'>('buyer');
 
   const from = (location.state as any)?.from || '/';
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -38,8 +37,9 @@ export function LoginPage() {
         showToast(`Welcome back! Logged in as ${loginType}`, 'success');
         navigate(from);
       }
-    } catch (error) {
-      showToast('Login failed. Please try again.', 'error');
+    }catch (error: any) {
+      console.error("LOGIN ERROR:", error);
+      showToast(error.message || 'Login failed', 'error');
     } finally {
       setIsLoading(false);
     }
