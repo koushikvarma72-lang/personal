@@ -91,28 +91,22 @@ export const useAuthStore = create<AuthState>()(
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: { name, role }
-          }
         });
-        
         if (error) {
-          console.error("SIGNUP ERROR:", error);
           throw new Error(error.message);
         }
 
         if (data.user) {
-          // ✅ INSERT INTO profiles table (THIS IS THE FIX)
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert([
-              {
-                id: data.user.id,
-                name,
-                role,
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-              }
-            ]);
+          // ✅ INSERT into profiles table
+          const { error: profileError } = await supabase.from('profiles').insert([
+            {
+              id: data.user.id, // MUST match auth user id
+              name,
+              role,
+              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+              email
+            }
+          ]);
 
           if (profileError) {
             throw new Error(profileError.message);
@@ -129,6 +123,7 @@ export const useAuthStore = create<AuthState>()(
 
           set({ user, isAuthenticated: true });
         }
+
         return true;
       },
 
