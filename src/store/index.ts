@@ -97,6 +97,7 @@ export const useAuthStore = create<AuthState>()(
         });
         
         if (error) {
+          console.error("SIGNUP ERROR:", error);
           throw new Error(error.message);
         }
 
