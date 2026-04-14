@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, Mail, Lock, Store, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, Store, User, ArrowRightLeft } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,38 +10,84 @@ import { Separator } from '@/components/ui/separator';
 
 export function LoginPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login, loginWithProvider } = useAuthStore();
+  const { login, loginWithProvider, switchRole } = useAuthStore();
   const { showToast } = useUIStore();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
   const [loginType, setLoginType] = useState<'buyer' | 'seller'>('buyer');
 
-  const from = (location.state as any)?.from || '/';
+  // Role mismatch state
+  const [showSwitchOption, setShowSwitchOption] = useState(false);
+  const [currentRole, setCurrentRole] = useState<'buyer' | 'seller' | null>(null);
+
+  const handleTabChange = (val: string) => {
+    setLoginType(val as 'buyer' | 'seller');
+    setShowSwitchOption(false);
+    setCurrentRole(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setShowSwitchOption(false);
+
     if (!email || !password) {
       showToast('Please fill in all fields', 'error');
       return;
     }
 
     setIsLoading(true);
-    
     try {
-      const success = await login(email, password, loginType);
-      if (success) {
-        showToast(`Welcome back! Logged in as ${loginType}`, 'success');
-        navigate(from);
+      const result = await login(email, password, loginType);
+      if (result.success) {
+        showToast(`Welcome back!`, 'success');
+        navigate(loginType === 'seller' ? '/seller' : '/');
+      } else if (result.roleMismatch) {
+        setCurrentRole(result.currentRole ?? null);
+        setShowSwitchOption(true);
       }
     } catch (error: any) {
-      console.error("LOGIN ERROR:", error);
       showToast(error.message || 'Login failed', 'error');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSwitch = async () => {
+    setIsSwitching(true);
+    try {
+      // Login without role check first
+      const result = await login(email, password);
+      if (result.success) {
+        await switchRole(loginType);
+        showToast(`Switched to ${loginType} successfully!`, 'success');
+        navigate(loginType === 'seller' ? '/seller' : '/');
+      }
+    } catch (error: any) {
+      showToast(error.message || 'Failed to switch role', 'error');
+    } finally {
+      setIsSwitching(false);
+      setShowSwitchOption(false);
+    }
+  };
+
+  const handleLoginAsCurrentRole = async () => {
+    if (!currentRole) return;
+    setIsSwitching(true);
+    try {
+      const result = await login(email, password, currentRole);
+      if (result.success) {
+        showToast(`Welcome back!`, 'success');
+        navigate(currentRole === 'seller' ? '/seller' : '/');
+      }
+    } catch (error: any) {
+      showToast(error.message || 'Login failed', 'error');
+    } finally {
+      setIsSwitching(false);
+      setShowSwitchOption(false);
     }
   };
 
@@ -74,7 +120,7 @@ export function LoginPage() {
           
           <CardContent className="space-y-4">
             {/* Login Type Tabs */}
-            <Tabs value={loginType} onValueChange={(v) => setLoginType(v as 'buyer' | 'seller')}>
+            <Tabs value={loginType} onValueChange={handleTabChange}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="buyer" className="flex items-center gap-2">
                   <User className="w-4 h-4" />
@@ -147,6 +193,41 @@ export function LoginPage() {
                 {isLoading ? 'Signing in...' : `Sign in as ${loginType === 'buyer' ? 'Buyer' : 'Seller'}`}
               </Button>
             </form>
+
+            {/* Role Mismatch Switch UI */}
+            {showSwitchOption && currentRole && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3 text-center">
+                <div className="flex items-center justify-center gap-2 text-amber-700">
+                  <ArrowRightLeft className="w-5 h-5" />
+                  <p className="text-sm font-medium">
+                    You're currently registered as a{' '}
+                    <span className="capitalize font-bold">{currentRole}</span>.
+                  </p>
+                </div>
+                <p className="text-xs text-amber-600">
+                  Want to switch to {loginType}? This will update your account role.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 border-amber-300 text-amber-700 hover:bg-amber-100"
+                    onClick={handleLoginAsCurrentRole}
+                    disabled={isSwitching}
+                  >
+                    Continue as {currentRole}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-bold"
+                    onClick={handleSwitch}
+                    disabled={isSwitching}
+                  >
+                    {isSwitching ? 'Switching...' : `Switch to ${loginType}`}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             <Separator />
 

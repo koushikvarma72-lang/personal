@@ -13,14 +13,21 @@ import type {
 import { supabase } from '@/lib/supabase';
 
 // Auth Store
+export interface LoginResult {
+  success: boolean;
+  roleMismatch?: boolean;
+  currentRole?: 'buyer' | 'seller';
+}
+
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string, role?: 'buyer' | 'seller') => Promise<boolean>;
+  login: (email: string, password: string, role?: 'buyer' | 'seller') => Promise<LoginResult>;
   loginWithProvider: (provider: 'google' | 'facebook') => Promise<void>;
   register: (name: string, email: string, password: string, role: 'buyer' | 'seller') => Promise<boolean>;
   logout: () => void;
   updateProfile: (updates: Partial<User>) => void;
+  switchRole: (newRole: 'buyer' | 'seller') => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,13 +36,12 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       isAuthenticated: false,
 
-      login: async (email: string, password: string, role?: 'buyer' | 'seller') => {
+      login: async (email: string, password: string, role?: 'buyer' | 'seller'): Promise<LoginResult> => {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          console.error("SIGNUP ERROR:", error);
           throw new Error(error.message);
         }
-        
+
         let profileData = null;
         if (data.user) {
           const { data: profile, error: profileError } = await supabase
@@ -49,16 +55,16 @@ export const useAuthStore = create<AuthState>()(
           }
 
           profileData = profile;
-          console.log("Selected role:", role);
-          console.log("DB role:", profileData?.role);
-          // ❌ STOP if profile does not exist
+
           if (!profileData) {
             throw new Error("User profile not found. Please register again.");
           }
 
-          // ❌ STOP if role mismatch
+          // Role mismatch — don't throw, return structured result
           if (role && profileData.role !== role) {
-            throw new Error(`You are not registered as a ${role}`);
+            // Sign out so the session isn't left dangling
+            await supabase.auth.signOut();
+            return { success: false, roleMismatch: true, currentRole: profileData.role };
           }
         }
 
@@ -70,9 +76,9 @@ export const useAuthStore = create<AuthState>()(
           avatar: profileData?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
           createdAt: new Date(data.user.created_at || Date.now()),
         };
-        
+
         set({ user, isAuthenticated: true });
-        return true;
+        return { success: true };
       },
 
       loginWithProvider: async (provider: 'google' | 'facebook') => {
@@ -137,6 +143,22 @@ export const useAuthStore = create<AuthState>()(
         if (user) {
           set({ user: { ...user, ...updates } });
         }
+      },
+
+      switchRole: async (newRole: 'buyer' | 'seller') => {
+        const { user } = get();
+        if (!user) return;
+
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: newRole })
+          .eq('id', user.id);
+
+        if (error) throw new Error(error.message);
+
+        set({
+          user: { ...user, role: newRole }
+        });
       },
     }),
     {
