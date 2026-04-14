@@ -80,7 +80,7 @@ export function SellerDashboard() {
 
   const filteredProducts = sellerProducts.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const productData = {
       name: formData.name, description: formData.description,
@@ -92,12 +92,20 @@ export function SellerDashboard() {
       specifications: {},
     };
 
-    if (editingProduct) {
-      updateProduct(editingProduct.id, productData); showToast('Product updated successfully!', 'success');
-    } else {
-      addProduct(productData); showToast('Product added successfully!', 'success');
+    try {
+      if (editingProduct) {
+        await updateProduct(editingProduct.id, productData);
+        showToast('Product updated successfully!', 'success');
+      } else {
+        await addProduct(productData);
+        showToast('Product added successfully!', 'success');
+      }
+      resetForm();
+      setIsAddDialogOpen(false);
+      setEditingProduct(null);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to save product. Please try again.', 'error');
     }
-    resetForm(); setIsAddDialogOpen(false); setEditingProduct(null);
   };
 
   const resetForm = () => setFormData({ name: '', description: '', price: '', originalPrice: '', category: '' as ProductCategory, stock: '', images: [''], tags: '' });

@@ -367,7 +367,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       },
 
       addProduct: async (productData) => {
-        const { error } = await supabase.from('products').insert([{
+        const { data, error } = await supabase.from('products').insert([{
            name: productData.name,
            description: productData.description,
            price: productData.price,
@@ -380,8 +380,9 @@ export const useProductStore = create<ProductState>((set, get) => ({
            seller_name: productData.sellerName,
            tags: productData.tags,
            specifications: productData.specifications
-        }]);
-        if (!error) get().fetchProducts();
+        }]).select();
+        if (error) throw new Error(error.message);
+        await get().fetchProducts();
       },
 
       updateProduct: async (id, updates) => {
