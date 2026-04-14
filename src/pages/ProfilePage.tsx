@@ -14,6 +14,8 @@ export function ProfilePage() {
   
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -51,6 +53,38 @@ export function ProfilePage() {
       showToast(err.message || 'Failed to update profile', 'error');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!user?.email) return;
+    setIsSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw new Error(error.message);
+      showToast('Password reset email sent! Check your inbox.', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to send reset email', 'error');
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) return;
+    if (!confirm('This will delete all your data. Type OK to confirm.')) return;
+    setIsDeletingAccount(true);
+    try {
+      // Delete profile (products/orders cascade via FK)
+      await supabase.from('profiles').delete().eq('id', user?.id);
+      await supabase.auth.signOut();
+      showToast('Account deleted.', 'info');
+      window.location.href = '/';
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete account', 'error');
+      setIsDeletingAccount(false);
     }
   };
 
@@ -205,26 +239,35 @@ export function ProfilePage() {
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">Change Password</p>
-                      <p className="text-sm text-gray-500">Update your account password</p>
+                      <p className="text-sm text-gray-500">A reset link will be sent to your email</p>
                     </div>
-                    <Button variant="outline">Change</Button>
+                    <Button variant="outline" disabled={isSendingReset} onClick={handleChangePassword}>
+                      {isSendingReset ? 'Sending...' : 'Send Reset Email'}
+                    </Button>
                   </div>
                   
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium">Email Notifications</p>
-                      <p className="text-sm text-gray-500">Manage your email preferences</p>
+                      <p className="text-sm text-gray-500">support@sareebazaar.com for preferences</p>
                     </div>
-                    <Button variant="outline">Manage</Button>
+                    <a href="mailto:support@sareebazaar.com?subject=Email Notification Preferences">
+                      <Button variant="outline">Manage</Button>
+                    </a>
                   </div>
                   
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                     <div>
                       <p className="font-medium text-red-600">Delete Account</p>
-                      <p className="text-sm text-gray-500">Permanently delete your account</p>
+                      <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
                     </div>
-                    <Button variant="outline" className="text-red-600 hover:bg-red-50">
-                      Delete
+                    <Button
+                      variant="outline"
+                      disabled={isDeletingAccount}
+                      className="text-red-600 hover:bg-red-50"
+                      onClick={handleDeleteAccount}
+                    >
+                      {isDeletingAccount ? 'Deleting...' : 'Delete'}
                     </Button>
                   </div>
                 </div>

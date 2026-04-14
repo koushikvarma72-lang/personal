@@ -1,37 +1,48 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
-  Star, 
-  ShoppingCart, 
-  Heart, 
-  Share2, 
-  Truck, 
-  Shield, 
-  RefreshCw,
-  Check,
-  Plus,
-  Minus,
-  Store,
-  MapPin
+  Star, ShoppingCart, Heart, Share2, Truck, Shield, RefreshCw,
+  Check, Plus, Minus, Store, MapPin, CheckCircle as CheckCircleIcon
 } from 'lucide-react';
-import { useProductStore, useCartStore, useUIStore } from '@/store';
+import { useProductStore, useCartStore, useUIStore, useAuthStore, useWishlistStore } from '@/store';
+import { useRecentlyViewed } from '@/hooks/use-recently-viewed';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
 export function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProductById, getProductsByCategory } = useProductStore();
+  const { getProductById, getProductsByCategory, products } = useProductStore();
   const { addToCart } = useCartStore();
   const { showToast, setCartOpen } = useUIStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { isWishlisted, addToWishlist, removeFromWishlist } = useWishlistStore();
+  const { add: addRecentlyViewed, getIds } = useRecentlyViewed();
   
   const product = getProductById(id || '');
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+
+  // Track recently viewed
+  useEffect(() => {
+    if (id) addRecentlyViewed(id);
+  }, [id]);
+
+  const wishlisted = product ? isWishlisted(product.id) : false;
+
+  // Review state
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewHover, setReviewHover] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
+
+  // Recently viewed products (excluding current)
+  const recentIds = getIds().filter(rid => rid !== id);
+  const recentlyViewed = recentIds.map(rid => products.find(p => p.id === rid)).filter(Boolean) as typeof products;
 
   if (!product) {
     return (
@@ -62,12 +73,18 @@ export function ProductDetailPage() {
     navigate('/checkout');
   };
 
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    showToast(
-      isWishlisted ? 'Removed from wishlist' : 'Added to wishlist!',
-      'success'
-    );
+  const handleWishlist = async () => {
+    if (!isAuthenticated || !user?.id || !product) {
+      showToast('Please sign in to save items', 'info');
+      return;
+    }
+    if (wishlisted) {
+      await removeFromWishlist(user.id, product.id);
+      showToast('Removed from wishlist', 'info');
+    } else {
+      await addToWishlist(user.id, product.id);
+      showToast('Added to wishlist!', 'success');
+    }
   };
 
   const handleShare = async () => {
@@ -151,10 +168,10 @@ export function ProductDetailPage() {
               <Button
                 onClick={handleWishlist}
                 variant="outline"
-                className={`flex-1 ${isWishlisted ? 'bg-red-50 border-red-300 text-red-600' : ''}`}
+                className={`flex-1 ${wishlisted ? 'bg-red-50 border-red-300 text-red-600' : ''}`}
               >
-                <Heart className={`w-5 h-5 mr-2 ${isWishlisted ? 'fill-current' : ''}`} />
-                {isWishlisted ? 'Wishlisted' : 'Add to Wishlist'}
+                <Heart className={`w-5 h-5 mr-2 ${wishlisted ? 'fill-current' : ''}`} />
+                {wishlisted ? 'Wishlisted' : 'Add to Wishlist'}
               </Button>
               <Button
                 onClick={handleShare}
@@ -282,7 +299,9 @@ export function ProductDetailPage() {
                     <Store className="w-6 h-6 text-[#febd69]" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium">{product.sellerName}</h3>
+                    <Link to={`/seller/${product.sellerId}`} className="font-medium hover:text-[#007185] transition-colors">
+                      {product.sellerName}
+                    </Link>
                     <div className="flex items-center gap-1 text-sm text-gray-500">
                       <MapPin className="w-4 h-4" />
                       <span>Mumbai, India</span>
@@ -362,11 +381,77 @@ export function ProductDetailPage() {
             </TabsContent>
             
             <TabsContent value="reviews" className="p-6">
-              <div className="text-center py-8">
-                <Star className="w-16 h-16 mx-auto mb-4 text-[#ffa41c]" />
-                <h3 className="text-xl font-bold mb-2">Customer Reviews</h3>
-                <p className="text-gray-500 mb-4">Average rating: {product.rating} out of 5</p>
-                <Button variant="outline">Write a Review</Button>
+              <div className="space-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="text-center">
+                    <p className="text-5xl font-bold text-[#0f1111]">{product.rating || 0}</p>
+                    <div className="flex justify-center mt-1">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'fill-[#ffa41c] text-[#ffa41c]' : 'text-gray-300'}`} />
+                      ))}
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">{product.reviewCount} ratings</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Write a Review */}
+                {isAuthenticated ? (
+                  reviewSubmitted ? (
+                    <div className="text-center py-6">
+                      <CheckCircleIcon className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                      <p className="font-medium text-green-700">Thank you for your review!</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-lg">Write a Review</h4>
+                      <div>
+                        <p className="text-sm text-gray-600 mb-2">Your Rating</p>
+                        <div className="flex gap-1">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              onMouseEnter={() => setReviewHover(star)}
+                              onMouseLeave={() => setReviewHover(0)}
+                              onClick={() => setReviewRating(star)}
+                            >
+                              <Star className={`w-8 h-8 transition-colors ${star <= (reviewHover || reviewRating) ? 'fill-[#ffa41c] text-[#ffa41c]' : 'text-gray-300'}`} />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 mb-2">Your Review</p>
+                        <Textarea
+                          placeholder="Share your experience with this product..."
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          rows={4}
+                        />
+                      </div>
+                      <Button
+                        className="bg-[#febd69] hover:bg-[#f90] text-[#131921] font-bold"
+                        disabled={reviewRating === 0 || reviewComment.trim().length < 5}
+                        onClick={() => {
+                          if (reviewRating === 0) { showToast('Please select a rating', 'error'); return; }
+                          if (reviewComment.trim().length < 5) { showToast('Please write a review', 'error'); return; }
+                          setReviewSubmitted(true);
+                          showToast('Review submitted!', 'success');
+                        }}
+                      >
+                        Submit Review
+                      </Button>
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-gray-500 mb-3">Please sign in to write a review</p>
+                    <Link to="/login">
+                      <Button className="bg-[#febd69] hover:bg-[#f90] text-[#131921]">Sign In</Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>
@@ -402,6 +487,30 @@ export function ProductDetailPage() {
                         </span>
                       )}
                     </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recently Viewed */}
+        {recentlyViewed.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold mb-4">Recently Viewed</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {recentlyViewed.map((p) => (
+                <Card key={p.id} className="group hover:shadow-lg transition-all">
+                  <Link to={`/product/${p.id}`}>
+                    <div className="relative h-32 overflow-hidden">
+                      <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                    </div>
+                  </Link>
+                  <CardContent className="p-2">
+                    <Link to={`/product/${p.id}`}>
+                      <h3 className="font-medium text-xs line-clamp-2 mb-1 hover:text-[#007185]">{p.name}</h3>
+                    </Link>
+                    <span className="text-sm font-bold text-[#b12704]">₹{p.price.toLocaleString()}</span>
                   </CardContent>
                 </Card>
               ))}

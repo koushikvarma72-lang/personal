@@ -29,7 +29,7 @@ export function Toast() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] animate-slide-in-right">
+    <div className="fixed bottom-4 right-4 md:bottom-4 md:right-4 top-4 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 z-[100] animate-slide-in-right w-max max-w-[90vw]">
       <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${bgColors[toast.type]}`}>
         {icons[toast.type]}
         <p className="text-sm font-medium text-gray-800">{toast.message}</p>

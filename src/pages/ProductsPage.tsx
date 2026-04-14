@@ -1,14 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Filter, 
-  Grid3X3, 
-  List, 
-  Star, 
-  ShoppingCart, 
-  ChevronDown,
-  SlidersHorizontal,
-  X
+  Filter, Grid3X3, List, Star, ShoppingCart,
+  ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useProductStore, useCartStore, useUIStore } from '@/store';
 import { Button } from '@/components/ui/button';
@@ -20,6 +14,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ProductCategory } from '@/types';
 
+const PAGE_SIZE = 12;
+
 export function ProductsPage() {
   const { filteredProducts, filters, setFilters, products } = useProductStore();
   const { addToCart } = useCartStore();
@@ -28,6 +24,7 @@ export function ProductsPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 50000]);
+  const [page, setPage] = useState(1);
 
   const categories: { id: ProductCategory; name: string; count: number }[] = [
     { id: 'sarees', name: 'Sarees', count: products.filter(p => p.category === 'sarees').length },
@@ -56,13 +53,18 @@ export function ProductsPage() {
 
   const handlePriceChange = (value: number[]) => {
     setPriceRange(value);
+    setPage(1);
     setFilters({ ...filters, minPrice: value[0], maxPrice: value[1] });
   };
 
   const clearFilters = () => {
     setFilters({});
     setPriceRange([0, 50000]);
+    setPage(1);
   };
+
+  const totalPages = Math.ceil(filteredProducts.length / PAGE_SIZE);
+  const paginatedProducts = filteredProducts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const activeFiltersCount = Object.keys(filters).filter(k => k !== 'sortBy').length;
 
@@ -278,101 +280,128 @@ export function ProductsPage() {
                 </div>
                 <h3 className="text-xl font-medium text-gray-900 mb-2">No products found</h3>
                 <p className="text-gray-500 mb-4">Try adjusting your filters or search criteria</p>
-                <Button onClick={clearFilters} variant="outline">
-                  Clear Filters
-                </Button>
+                <div className="flex gap-3 justify-center">
+                  <Button onClick={clearFilters} variant="outline">Clear Filters</Button>
+                  <Link to="/register">
+                    <Button className="bg-[#febd69] hover:bg-[#f90] text-[#131921]">Become a Seller</Button>
+                  </Link>
+                </div>
               </div>
             ) : (
-              <div className={viewMode === 'grid' 
-                ? 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4' 
-                : 'space-y-4'
-              }>
-                {filteredProducts.map((product) => (
-                  <Card 
-                    key={product.id} 
-                    className={`group hover:shadow-xl transition-all duration-300 overflow-hidden ${
-                      viewMode === 'list' ? 'flex' : ''
-                    }`}
-                  >
-                    {/* Image */}
-                    <Link to={`/product/${product.id}`} className={viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}>
-                      <div className={`relative overflow-hidden bg-gray-100 ${viewMode === 'list' ? 'h-full' : 'h-48 md:h-64'}`}>
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        {product.originalPrice && (
-                          <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-600">
-                            {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                          </Badge>
-                        )}
-                        {product.stock < 10 && (
-                          <Badge className="absolute top-2 right-2 bg-orange-500 hover:bg-orange-600">
-                            Only {product.stock} left
-                          </Badge>
-                        )}
-                      </div>
-                    </Link>
-
-                    {/* Content */}
-                    <CardContent className={`p-4 ${viewMode === 'list' ? 'flex-1 flex flex-col justify-between' : ''}`}>
-                      <div>
-                        <Link to={`/product/${product.id}`}>
-                          <h3 className="font-medium text-sm md:text-base line-clamp-2 mb-1 hover:text-[#007185] transition-colors">
-                            {product.name}
-                          </h3>
-                        </Link>
-                        <p className="text-xs text-gray-500 mb-2">{product.sellerName}</p>
-                        
-                        {/* Rating */}
-                        <div className="flex items-center gap-1 mb-2">
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <Star 
-                                key={i} 
-                                className={`w-3 h-3 ${i < Math.floor(product.rating) ? 'fill-[#ffa41c] text-[#ffa41c]' : 'text-gray-300'}`} 
-                              />
-                            ))}
-                          </div>
-                          <span className="text-xs text-[#007185]">({product.reviewCount})</span>
-                        </div>
-
-                        {/* Price */}
-                        <div className="flex items-baseline gap-2 mb-3">
-                          <span className="text-xl font-bold text-[#b12704]">₹{product.price.toLocaleString()}</span>
+              <>
+                <div className={viewMode === 'grid' 
+                  ? 'grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4' 
+                  : 'space-y-4'
+                }>
+                  {paginatedProducts.map((product) => (
+                    <Card 
+                      key={product.id} 
+                      className={`group hover:shadow-xl transition-all duration-300 overflow-hidden ${
+                        viewMode === 'list' ? 'flex' : ''
+                      }`}
+                    >
+                      <Link to={`/product/${product.id}`} className={viewMode === 'list' ? 'w-48 flex-shrink-0' : ''}>
+                        <div className={`relative overflow-hidden bg-gray-100 ${viewMode === 'list' ? 'h-full' : 'h-48 md:h-64'}`}>
+                          <img
+                            src={product.images[0]}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
                           {product.originalPrice && (
-                            <span className="text-sm text-gray-400 line-through">
-                              ₹{product.originalPrice.toLocaleString()}
-                            </span>
+                            <Badge className="absolute top-2 left-2 bg-red-500 hover:bg-red-600">
+                              {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
+                            </Badge>
+                          )}
+                          {product.stock < 10 && product.stock > 0 && (
+                            <Badge className="absolute top-2 right-2 bg-orange-500 hover:bg-orange-600">
+                              Only {product.stock} left
+                            </Badge>
+                          )}
+                          {product.stock === 0 && (
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                              <span className="bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded">Out of Stock</span>
+                            </div>
                           )}
                         </div>
+                      </Link>
 
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {product.tags.slice(0, 3).map((tag) => (
-                            <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                              {tag}
-                            </span>
-                          ))}
+                      <CardContent className={`p-4 ${viewMode === 'list' ? 'flex-1 flex flex-col justify-between' : ''}`}>
+                        <div>
+                          <Link to={`/product/${product.id}`}>
+                            <h3 className="font-medium text-sm md:text-base line-clamp-2 mb-1 hover:text-[#007185] transition-colors">
+                              {product.name}
+                            </h3>
+                          </Link>
+                          <p className="text-xs text-gray-500 mb-2">{product.sellerName}</p>
+                          <div className="flex items-center gap-1 mb-2">
+                            <div className="flex">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} className={`w-3 h-3 ${i < Math.floor(product.rating) ? 'fill-[#ffa41c] text-[#ffa41c]' : 'text-gray-300'}`} />
+                              ))}
+                            </div>
+                            <span className="text-xs text-[#007185]">({product.reviewCount})</span>
+                          </div>
+                          <div className="flex items-baseline gap-2 mb-3">
+                            <span className="text-xl font-bold text-[#b12704]">₹{product.price.toLocaleString()}</span>
+                            {product.originalPrice && (
+                              <span className="text-sm text-gray-400 line-through">₹{product.originalPrice.toLocaleString()}</span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap gap-1 mb-3">
+                            {product.tags.slice(0, 3).map((tag) => (
+                              <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{tag}</span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => handleAddToCart(product)}
+                            className="flex-1 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-medium"
+                            size="sm"
+                            disabled={product.stock === 0}
+                          >
+                            <ShoppingCart className="w-4 h-4 mr-2" />
+                            {product.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={() => handleAddToCart(product)}
-                          className="flex-1 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-medium"
-                          size="sm"
-                        >
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Add to Cart
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-8">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page === 1}
+                      onClick={() => { setPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </Button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                      <Button
+                        key={p}
+                        variant={p === page ? 'default' : 'outline'}
+                        size="sm"
+                        className={p === page ? 'bg-[#febd69] text-[#131921] hover:bg-[#f90]' : ''}
+                        onClick={() => { setPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                      >
+                        {p}
+                      </Button>
+                    ))}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={page === totalPages}
+                      onClick={() => { setPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

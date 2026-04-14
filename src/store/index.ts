@@ -504,6 +504,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
             status: item.status
           }));
           await supabase.from('order_items').insert(itemsToInsert);
+
+          // Decrement stock for each ordered product
+          for (const item of orderData.items) {
+            const product = useProductStore.getState().products.find(p => p.id === item.productId);
+            if (product) {
+              const newStock = Math.max(0, product.stock - item.quantity);
+              await supabase.from('products').update({ stock: newStock }).eq('id', item.productId);
+            }
+          }
+
           get().fetchOrders();
           return order.id;
         }
@@ -556,4 +566,34 @@ export const useUIStore = create<UIState>((set) => ({
   setMobileMenuOpen: (open) => set({ isMobileMenuOpen: open }),
   showToast: (message, type) => set({ toast: { message, type } }),
   clearToast: () => set({ toast: null }),
+}));
+
+// Wishlist Store
+interface WishlistState {
+  items: string[]; // product IDs
+  fetchWishlist: (userId: string) => Promise<void>;
+  addToWishlist: (userId: string, productId: string) => Promise<void>;
+  removeFromWishlist: (userId: string, productId: string) => Promise<void>;
+  isWishlisted: (productId: string) => boolean;
+}
+
+export const useWishlistStore = create<WishlistState>((set, get) => ({
+  items: [],
+
+  fetchWishlist: async (userId) => {
+    const { data } = await supabase.from('wishlists').select('product_id').eq('user_id', userId);
+    if (data) set({ items: data.map(w => w.product_id) });
+  },
+
+  addToWishlist: async (userId, productId) => {
+    await supabase.from('wishlists').insert([{ user_id: userId, product_id: productId }]);
+    set(state => ({ items: [...state.items, productId] }));
+  },
+
+  removeFromWishlist: async (userId, productId) => {
+    await supabase.from('wishlists').delete().match({ user_id: userId, product_id: productId });
+    set(state => ({ items: state.items.filter(id => id !== productId) }));
+  },
+
+  isWishlisted: (productId) => get().items.includes(productId),
 }));

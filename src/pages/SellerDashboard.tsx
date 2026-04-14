@@ -31,7 +31,7 @@ export function SellerDashboard() {
   
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', originalPrice: '',
-    category: '' as ProductCategory, stock: '', images: [''], tags: '',
+    category: '' as ProductCategory, stock: '', images: ['', '', '', ''], tags: '',
   });
 
   const sellerOrders = getSellerOrders(user?.id || '');
@@ -116,10 +116,11 @@ export function SellerDashboard() {
     }
   };
 
-  const resetForm = () => setFormData({ name: '', description: '', price: '', originalPrice: '', category: '' as ProductCategory, stock: '', images: [''], tags: '' });
+  const resetForm = () => setFormData({ name: '', description: '', price: '', originalPrice: '', category: '' as ProductCategory, stock: '', images: ['', '', '', ''], tags: '' });
   const handleEdit = (product: any) => {
     setEditingProduct(product);
-    setFormData({ name: product.name, description: product.description, price: product.price.toString(), originalPrice: product.originalPrice?.toString() || '', category: product.category, stock: product.stock.toString(), images: product.images, tags: product.tags.join(', ') });
+    const imgs = [...product.images, '', '', '', ''].slice(0, 4);
+    setFormData({ name: product.name, description: product.description, price: product.price.toString(), originalPrice: product.originalPrice?.toString() || '', category: product.category, stock: product.stock.toString(), images: imgs, tags: product.tags.join(', ') });
     setIsAddDialogOpen(true);
   };
   const handleDelete = (productId: string) => { if (confirm('Are you sure you want to delete this product?')) { deleteProduct(productId); showToast('Product deleted successfully!', 'success'); } };
@@ -159,7 +160,28 @@ export function SellerDashboard() {
                   <div className="space-y-2"><Label>Original Price (₹)</Label><Input type="number" value={formData.originalPrice} onChange={(e) => setFormData({ ...formData, originalPrice: e.target.value })} /></div>
                   <div className="space-y-2"><Label>Stock *</Label><Input type="number" value={formData.stock} onChange={(e) => setFormData({ ...formData, stock: e.target.value })} required /></div>
                 </div>
-                <div className="space-y-2"><Label>Image URL *</Label><Input value={formData.images[0]} onChange={(e) => setFormData({ ...formData, images: [e.target.value] })} required /></div>
+                <div className="space-y-2">
+                  <Label>Image URLs (up to 4) *</Label>
+                  {formData.images.map((img, idx) => (
+                    <div key={idx} className="flex gap-2 items-center">
+                      <Input
+                        placeholder={idx === 0 ? 'Main image URL *' : `Image ${idx + 1} URL (optional)`}
+                        value={img}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val && !val.startsWith('http')) return; // basic URL validation
+                          const imgs = [...formData.images];
+                          imgs[idx] = val;
+                          setFormData({ ...formData, images: imgs });
+                        }}
+                        required={idx === 0}
+                      />
+                      {img && (
+                        <img src={img} alt="" className="w-10 h-10 rounded object-cover border flex-shrink-0" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                      )}
+                    </div>
+                  ))}
+                </div>
                 <div className="space-y-2"><Label>Tags (comma separated)</Label><Input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} /></div>
                 <div className="flex gap-3 pt-4"><Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1">Cancel</Button><Button type="submit" disabled={isSubmitting} className="flex-1 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-bold">{isSubmitting ? <><div className="w-4 h-4 border-2 border-[#131921] border-t-transparent rounded-full animate-spin mr-2" />Saving...</> : editingProduct ? 'Update Product' : 'Add Product'}</Button></div>
               </form>
@@ -200,18 +222,35 @@ export function SellerDashboard() {
               </Card>
 
               <Card>
-                <CardHeader><CardTitle className="text-lg">Top Products</CardTitle></CardHeader>
-                <CardContent className="space-y-4">
-                  {sellerProducts.slice(0, 4).map(product => (
-                    <div key={product.id} className="flex items-center gap-4">
-                      <img src={product.images[0]} alt={product.name} className="w-12 h-12 rounded-lg object-cover" />
+                <CardHeader><CardTitle className="text-lg">Revenue by Product</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {useMemo(() => {
+                    const revenueMap: Record<string, { name: string; image: string; revenue: number; qty: number }> = {};
+                    sellerOrders.forEach(order => {
+                      order.items.forEach(item => {
+                        if (item.sellerId === user?.id) {
+                          if (!revenueMap[item.productId]) {
+                            revenueMap[item.productId] = { name: item.productName, image: item.productImage, revenue: 0, qty: 0 };
+                          }
+                          revenueMap[item.productId].revenue += item.price * item.quantity;
+                          revenueMap[item.productId].qty += item.quantity;
+                        }
+                      });
+                    });
+                    return Object.values(revenueMap).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+                  }, [sellerOrders, user?.id]).map((p, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <img src={p.image} alt={p.name} className="w-10 h-10 rounded object-cover flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium line-clamp-1">{product.name}</p>
-                        <p className="text-xs text-gray-500">{Math.floor(Math.random()*50 + 10)} sales</p>
+                        <p className="text-sm font-medium line-clamp-1">{p.name}</p>
+                        <p className="text-xs text-gray-500">{p.qty} sold</p>
                       </div>
-                      <div className="font-medium text-sm">₹{product.price.toLocaleString()}</div>
+                      <span className="text-sm font-bold text-[#b12704]">₹{p.revenue.toLocaleString()}</span>
                     </div>
                   ))}
+                  {sellerOrders.length === 0 && (
+                    <p className="text-sm text-gray-400 text-center py-4">No sales data yet</p>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -326,7 +365,7 @@ export function SellerDashboard() {
                           <td className="py-3 px-4"><Badge variant="secondary">{categories.find(c => c.id === product.category)?.name}</Badge></td>
                           <td className="py-3 px-4"><div><span className="font-medium">₹{product.price.toLocaleString()}</span>{product.originalPrice && (<span className="text-sm text-gray-400 line-through ml-2">₹{product.originalPrice.toLocaleString()}</span>)}</div></td>
                           <td className="py-3 px-4"><span className={product.stock < 10 ? 'text-red-600 font-medium' : ''}>{product.stock}</span></td>
-                          <td className="py-3 px-4"><Badge className={product.status === 'active' ? 'bg-green-500' : 'bg-gray-500'}>{product.status}</Badge></td>
+                          <td className="py-3 px-4"><Badge className={product.status === 'active' ? 'bg-green-500 cursor-pointer' : 'bg-gray-500 cursor-pointer'} onClick={() => { updateProduct(product.id, { status: product.status === 'active' ? 'inactive' : 'active' }); showToast(`Product ${product.status === 'active' ? 'deactivated' : 'activated'}.`, 'success'); }}>{product.status}</Badge></td>
                           <td className="py-3 px-4"><div className="flex gap-2"><button onClick={() => handleEdit(product)} className="p-2 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"><Edit className="w-4 h-4" /></button><button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button></div></td>
                         </tr>
                       ))}

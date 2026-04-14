@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuthStore, useProductStore, useOrderStore } from '@/store';
+import { useAuthStore, useProductStore, useOrderStore, useWishlistStore } from '@/store';
 import { supabase } from '@/lib/supabase';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -12,18 +12,20 @@ import { ProductDetailPage } from '@/pages/ProductDetailPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { SellerDashboard } from '@/pages/SellerDashboard';
+import { SellerProfilePage } from '@/pages/SellerProfilePage';
 import { OrdersPage } from '@/pages/OrdersPage';
 import { CheckoutPage } from '@/pages/CheckoutPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { WishlistPage } from '@/pages/WishlistPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
   const { fetchProducts } = useProductStore();
   const { fetchOrders } = useOrderStore();
+  const { fetchWishlist } = useWishlistStore();
 
   useEffect(() => {
-    // Restore session on page refresh
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user && !useAuthStore.getState().isAuthenticated) {
         const { data: profile } = await supabase
@@ -52,8 +54,9 @@ function App() {
     fetchProducts();
     if (isAuthenticated) {
       fetchOrders();
+      if (user?.id) fetchWishlist(user.id);
     }
-  }, [isAuthenticated, fetchProducts, fetchOrders]);
+  }, [isAuthenticated, fetchProducts, fetchOrders, fetchWishlist, user?.id]);
 
   // Listen for Supabase auth changes (e.g. after Google OAuth redirect)
   useEffect(() => {
@@ -165,6 +168,15 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            <Route
+              path="/wishlist"
+              element={
+                <ProtectedRoute>
+                  <WishlistPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/seller/:sellerId" element={<SellerProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </main>

@@ -1,18 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  ArrowRight, 
-  Star, 
-  Clock, 
-  TrendingUp, 
-  Shield, 
-  Truck, 
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-  Sparkles
+  ArrowRight, Star, Clock, TrendingUp, Shield, Truck, RefreshCw,
+  ChevronLeft, ChevronRight, Sparkles, Store
 } from 'lucide-react';
 import { useProductStore, useCartStore, useUIStore } from '@/store';
+import { useRecentlyViewed } from '@/hooks/use-recently-viewed';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,10 +15,13 @@ export function HomePage() {
   const { getFeaturedProducts, getDeals, getProductsByCategory, setFilters, products } = useProductStore();
   const { addToCart } = useCartStore();
   const { showToast, setCartOpen } = useUIStore();
+  const { getIds } = useRecentlyViewed();
   
   const featuredProducts = getFeaturedProducts();
   const deals = getDeals();
   const sarees = getProductsByCategory('sarees').slice(0, 4);
+  const recentIds = getIds();
+  const recentlyViewed = recentIds.map(id => products.find(p => p.id === id)).filter(Boolean) as typeof products;
   
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -339,7 +335,13 @@ export function HomePage() {
             className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 -mx-4 px-4"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {featuredProducts.map((product) => (
+            {featuredProducts.length === 0 ? (
+              <div className="w-full bg-white rounded-xl p-10 text-center">
+                <Store className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-gray-500 mb-3">No featured products yet</p>
+                <Link to="/register"><Button size="sm" className="bg-[#febd69] hover:bg-[#f90] text-[#131921]">Become a Seller</Button></Link>
+              </div>
+            ) : featuredProducts.map((product) => (
               <Card key={product.id} className="flex-shrink-0 w-64 group hover:shadow-xl transition-all duration-300">
                 <Link to={`/product/${product.id}`}>
                   <div className="relative h-64 overflow-hidden bg-gray-100">
@@ -407,7 +409,13 @@ export function HomePage() {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {sarees.map((saree) => (
+            {sarees.length === 0 ? (
+              <div className="col-span-4 bg-gray-50 rounded-xl p-10 text-center">
+                <Store className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-gray-500 mb-3">No sarees listed yet</p>
+                <Link to="/register"><Button size="sm" className="bg-[#febd69] hover:bg-[#f90] text-[#131921]">Sell Sarees</Button></Link>
+              </div>
+            ) : sarees.map((saree) => (
               <Card key={saree.id} className="group hover:shadow-xl transition-all duration-300 overflow-hidden">
                 <Link to={`/product/${saree.id}`}>
                   <div className="relative h-64 md:h-80 overflow-hidden">
@@ -474,6 +482,32 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Recently Viewed */}
+      {recentlyViewed.length > 0 && (
+        <section className="py-12 px-4 bg-white">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] mb-6">Recently Viewed</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              {recentlyViewed.map(product => (
+                <Card key={product.id} className="group hover:shadow-lg transition-all overflow-hidden">
+                  <Link to={`/product/${product.id}`}>
+                    <div className="relative h-32 overflow-hidden bg-gray-100">
+                      <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                  </Link>
+                  <CardContent className="p-2">
+                    <Link to={`/product/${product.id}`}>
+                      <h3 className="font-medium text-xs line-clamp-2 mb-1 hover:text-[#007185]">{product.name}</h3>
+                    </Link>
+                    <span className="text-sm font-bold text-[#b12704]">₹{product.price.toLocaleString()}</span>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* CTA Section */}
       <section className="py-16 px-4 bg-gradient-to-r from-[#232f3e] to-[#131921] text-white">

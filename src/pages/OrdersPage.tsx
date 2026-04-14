@@ -1,15 +1,10 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
-  Package, 
-  Truck, 
-  CheckCircle, 
-  Clock, 
-  XCircle,
-  Search,
-  Filter
+  Package, Truck, CheckCircle, Clock, XCircle,
+  Search, ChevronDown, ChevronUp, MapPin
 } from 'lucide-react';
-import { useAuthStore, useOrderStore } from '@/store';
+import { useAuthStore, useOrderStore, useUIStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,16 +15,18 @@ import type { OrderStatus } from '@/types';
 
 export function OrdersPage() {
   const { user } = useAuthStore();
-  const { getUserOrders } = useOrderStore();
+  const { getUserOrders, updateOrderStatus } = useOrderStore();
+  const { showToast } = useUIStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const userOrders = getUserOrders(user?.id || '');
-  
+
   const filteredOrders = userOrders.filter(order => {
     const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.items.some(item => item.productName.toLowerCase().includes(searchQuery.toLowerCase()));
-    
     if (activeTab === 'all') return matchesSearch;
     return matchesSearch && order.status === activeTab;
   });
@@ -59,6 +56,19 @@ export function OrdersPage() {
     return styles[status] || 'bg-gray-100 text-gray-700';
   };
 
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+    setCancellingId(orderId);
+    try {
+      await updateOrderStatus(orderId, 'cancelled');
+      showToast('Order cancelled successfully.', 'success');
+    } catch {
+      showToast('Failed to cancel order.', 'error');
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   const orderCounts = {
     all: userOrders.length,
     pending: userOrders.filter(o => o.status === 'pending').length,
@@ -68,18 +78,14 @@ export function OrdersPage() {
     cancelled: userOrders.filter(o => o.status === 'cancelled').length,
   };
 
-  const displayOrders = filteredOrders;
-
   return (
     <div className="min-h-screen bg-[#e3e6e6] py-6">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111]">Your Orders</h1>
           <p className="text-gray-500">Track and manage your purchases</p>
         </div>
 
-        {/* Search */}
         <div className="flex gap-3 mb-6">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -90,13 +96,8 @@ export function OrdersPage() {
               className="pl-10"
             />
           </div>
-          <Button variant="outline">
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
-          </Button>
         </div>
 
-        {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full justify-start overflow-x-auto mb-6">
             <TabsTrigger value="all">All ({orderCounts.all})</TabsTrigger>
@@ -109,7 +110,7 @@ export function OrdersPage() {
 
           <TabsContent value={activeTab} className="mt-0">
             <div className="space-y-4">
-              {displayOrders.length === 0 ? (
+              {filteredOrders.length === 0 ? (
                 <Card>
                   <CardContent className="p-12 text-center">
                     <Package className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -123,7 +124,7 @@ export function OrdersPage() {
                   </CardContent>
                 </Card>
               ) : (
-                displayOrders.map((order) => (
+                filteredOrders.map((order) => (
                   <Card key={order.id} className="overflow-hidden">
                     <CardContent className="p-0">
                       {/* Order Header */}
@@ -131,21 +132,28 @@ export function OrdersPage() {
                         <div className="flex flex-wrap gap-6">
                           <div>
                             <p className="text-xs text-gray-500">ORDER ID</p>
-                            <p className="font-medium">{order.id}</p>
+                            <p className="font-medium text-sm">{order.id.slice(-12).toUpperCase()}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">ORDERED ON</p>
                             <p className="font-medium">
                               {new Date(order.createdAt).toLocaleDateString('en-IN', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric'
+                                day: 'numeric', month: 'short', year: 'numeric'
                               })}
                             </p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">TOTAL</p>
                             <p className="font-medium">₹{order.total.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-500">STATUS</p>
+                            <Badge className={getStatusBadge(order.status)}>
+                              <span className="flex items-center gap-1">
+                                {getStatusIcon(order.status)}
+                                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                              </span>
+                            </Badge>
                           </div>
                         </div>
                       </div>
@@ -180,26 +188,67 @@ export function OrdersPage() {
                         ))}
                       </div>
 
+                      {/* Expandable Order Details */}
+                      {expandedOrder === order.id && (
+                        <div className="px-4 pb-4 bg-gray-50 border-t space-y-2 text-sm text-gray-600">
+                          <p className="font-medium text-gray-800 pt-3">Delivery Address</p>
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
+                            <span>
+                              {order.shippingAddress.street}, {order.shippingAddress.city},{' '}
+                              {order.shippingAddress.state} - {order.shippingAddress.pincode},{' '}
+                              {order.shippingAddress.country}
+                            </span>
+                          </div>
+                          <div className="flex gap-6 pt-1">
+                            <div><span className="text-gray-500">Subtotal: </span>₹{order.subtotal.toLocaleString()}</div>
+                            <div><span className="text-gray-500">Shipping: </span>{order.shipping === 0 ? 'FREE' : `₹${order.shipping}`}</div>
+                            <div><span className="text-gray-500">Tax: </span>₹{order.tax.toLocaleString()}</div>
+                          </div>
+                        </div>
+                      )}
+
                       <Separator />
 
                       {/* Order Actions */}
                       <div className="p-4 flex flex-wrap gap-3">
-                        <Button variant="outline" size="sm">
-                          View Order Details
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                        >
+                          {expandedOrder === order.id ? (
+                            <><ChevronUp className="w-4 h-4 mr-1" />Hide Details</>
+                          ) : (
+                            <><ChevronDown className="w-4 h-4 mr-1" />View Order Details</>
+                          )}
                         </Button>
+
                         {order.status === 'delivered' && (
-                          <Button variant="outline" size="sm">
-                            Write a Review
-                          </Button>
+                          <Link to={`/product/${order.items[0]?.productId}`}>
+                            <Button variant="outline" size="sm">
+                              Write a Review
+                            </Button>
+                          </Link>
                         )}
+
                         {['pending', 'confirmed'].includes(order.status) && (
-                          <Button variant="outline" size="sm" className="text-red-600 hover:bg-red-50">
-                            Cancel Order
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={cancellingId === order.id}
+                            className="text-red-600 hover:bg-red-50"
+                            onClick={() => handleCancelOrder(order.id)}
+                          >
+                            {cancellingId === order.id ? 'Cancelling...' : 'Cancel Order'}
                           </Button>
                         )}
-                        <Button variant="outline" size="sm">
-                          Need Help?
-                        </Button>
+
+                        <a href="mailto:support@sareebazaar.com?subject=Help with order">
+                          <Button variant="outline" size="sm">
+                            Need Help?
+                          </Button>
+                        </a>
                       </div>
                     </CardContent>
                   </Card>
