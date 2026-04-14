@@ -41,8 +41,6 @@ export function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
       const orderData = {
         userId: user?.id || '',
         items: cart.items.map(item => ({
@@ -64,7 +62,8 @@ export function CheckoutPage() {
         shippingAddress: address,
       };
 
-      addOrder(orderData);
+      const orderId = await addOrder(orderData);
+      if (!orderId) throw new Error('Failed to create order');
       clearCart();
       showToast('Order placed successfully!', 'success');
       navigate('/orders');

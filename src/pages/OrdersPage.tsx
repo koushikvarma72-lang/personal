@@ -68,53 +68,7 @@ export function OrdersPage() {
     cancelled: userOrders.filter(o => o.status === 'cancelled').length,
   };
 
-  // Mock orders for demo
-  const mockOrders = [
-    {
-      id: 'ORDER-2024-001',
-      status: 'delivered' as OrderStatus,
-      userId: user?.id || 'demo',
-      createdAt: new Date('2024-03-15'),
-      updatedAt: new Date('2024-03-15'),
-      paymentStatus: 'completed' as const,
-      shippingAddress: { street: '', city: '', state: '', pincode: '', country: '' },
-      subtotal: 12999, shipping: 0, tax: 0,
-      items: [
-        { productId: 'prod_1', productName: 'Banarasi Silk Saree', productImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=100', quantity: 1, price: 12999, total: 12999, sellerId: 'seller_1', status: 'delivered' as OrderStatus }
-      ],
-      total: 12999,
-    },
-    {
-      id: 'ORDER-2024-002',
-      status: 'shipped' as OrderStatus,
-      userId: user?.id || 'demo',
-      createdAt: new Date('2024-03-20'),
-      updatedAt: new Date('2024-03-20'),
-      paymentStatus: 'completed' as const,
-      shippingAddress: { street: '', city: '', state: '', pincode: '', country: '' },
-      subtotal: 8999, shipping: 0, tax: 0,
-      items: [
-        { productId: 'prod_8', productName: 'Kundan Jewelry Set', productImage: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=100', quantity: 1, price: 8999, total: 8999, sellerId: 'seller_1', status: 'shipped' as OrderStatus }
-      ],
-      total: 8999,
-    },
-    {
-      id: 'ORDER-2024-003',
-      status: 'processing' as OrderStatus,
-      userId: user?.id || 'demo',
-      createdAt: new Date('2024-03-25'),
-      updatedAt: new Date('2024-03-25'),
-      paymentStatus: 'completed' as const,
-      shippingAddress: { street: '', city: '', state: '', pincode: '', country: '' },
-      subtotal: 24999, shipping: 0, tax: 0,
-      items: [
-        { productId: 'prod_4', productName: 'Designer Lehenga Choli', productImage: 'https://images.unsplash.com/photo-1583391733952-0e8a5ed1f57c?w=100', quantity: 1, price: 24999, total: 24999, sellerId: 'seller_1', status: 'processing' as OrderStatus }
-      ],
-      total: 24999,
-    },
-  ];
-
-  const displayOrders = userOrders.length > 0 ? filteredOrders : mockOrders;
+  const displayOrders = filteredOrders;
 
   return (
     <div className="min-h-screen bg-[#e3e6e6] py-6">

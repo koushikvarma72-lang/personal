@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Phone, MapPin, Camera, Edit2, Save } from 'lucide-react';
 import { useAuthStore, useUIStore } from '@/store';
+import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ export function ProfilePage() {
   const { showToast } = useUIStore();
   
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
@@ -22,20 +24,34 @@ export function ProfilePage() {
     pincode: user?.address?.pincode || '',
   });
 
-  const handleSave = () => {
-    updateProfile({
-      name: formData.name,
-      phone: formData.phone,
-      address: {
-        street: formData.street,
-        city: formData.city,
-        state: formData.state,
-        pincode: formData.pincode,
-        country: 'India',
-      },
-    });
-    setIsEditing(false);
-    showToast('Profile updated successfully!', 'success');
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name: formData.name })
+        .eq('id', user?.id);
+
+      if (error) throw new Error(error.message);
+
+      updateProfile({
+        name: formData.name,
+        phone: formData.phone,
+        address: {
+          street: formData.street,
+          city: formData.city,
+          state: formData.state,
+          pincode: formData.pincode,
+          country: 'India',
+        },
+      });
+      setIsEditing(false);
+      showToast('Profile updated successfully!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to update profile', 'error');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -92,12 +108,15 @@ export function ProfilePage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={isSaving}
                   onClick={() => isEditing ? handleSave() : setIsEditing(true)}
                 >
                   {isEditing ? (
-                    <><Save className="w-4 h-4 mr-2" /> Save</>
+                    isSaving
+                      ? <><div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2" />Saving...</>
+                      : <><Save className="w-4 h-4 mr-2" />Save</>
                   ) : (
-                    <><Edit2 className="w-4 h-4 mr-2" /> Edit</>
+                    <><Edit2 className="w-4 h-4 mr-2" />Edit</>
                   )}
                 </Button>
               </CardHeader>

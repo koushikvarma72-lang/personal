@@ -27,6 +27,7 @@ export function SellerDashboard() {
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('analytics');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', originalPrice: '',
@@ -72,8 +73,8 @@ export function SellerDashboard() {
           });
         }
       });
-      // Add some random noise to make the chart look realistic if no orders exist yet
-      data.push({ name: dateStr, revenue: dailyRev > 0 ? dailyRev : Math.floor(Math.random() * 50000) });
+      // Only show actual revenue, 0 if no orders that day
+      data.push({ name: dateStr, revenue: dailyRev });
     }
     return data;
   }, [sellerOrders, user?.id]);
@@ -82,6 +83,10 @@ export function SellerDashboard() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.category) {
+      showToast('Please select a category', 'error');
+      return;
+    }
     const productData = {
       name: formData.name, description: formData.description,
       price: Number(formData.price), originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined,
@@ -92,6 +97,7 @@ export function SellerDashboard() {
       specifications: {},
     };
 
+    setIsSubmitting(true);
     try {
       if (editingProduct) {
         await updateProduct(editingProduct.id, productData);
@@ -105,6 +111,8 @@ export function SellerDashboard() {
       setEditingProduct(null);
     } catch (err: any) {
       showToast(err.message || 'Failed to save product. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -153,7 +161,7 @@ export function SellerDashboard() {
                 </div>
                 <div className="space-y-2"><Label>Image URL *</Label><Input value={formData.images[0]} onChange={(e) => setFormData({ ...formData, images: [e.target.value] })} required /></div>
                 <div className="space-y-2"><Label>Tags (comma separated)</Label><Input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} /></div>
-                <div className="flex gap-3 pt-4"><Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1">Cancel</Button><Button type="submit" className="flex-1 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-bold">{editingProduct ? 'Update Product' : 'Add Product'}</Button></div>
+                <div className="flex gap-3 pt-4"><Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1">Cancel</Button><Button type="submit" disabled={isSubmitting} className="flex-1 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-bold">{isSubmitting ? <><div className="w-4 h-4 border-2 border-[#131921] border-t-transparent rounded-full animate-spin mr-2" />Saving...</> : editingProduct ? 'Update Product' : 'Add Product'}</Button></div>
               </form>
             </DialogContent>
           </Dialog>

@@ -165,9 +165,10 @@ export const useAuthStore = create<AuthState>()(
 
         if (error) throw new Error(error.message);
 
-        set({
-          user: { ...user, role: newRole }
-        });
+        set({ user: { ...user, role: newRole } });
+
+        // Refresh products so sellerProducts is populated for the new role
+        await useProductStore.getState().fetchProducts();
       },
     }),
     {
@@ -367,7 +368,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
       },
 
       addProduct: async (productData) => {
-        const { data, error } = await supabase.from('products').insert([{
+        const { error } = await supabase.from('products').insert([{
            name: productData.name,
            description: productData.description,
            price: productData.price,
@@ -380,7 +381,7 @@ export const useProductStore = create<ProductState>((set, get) => ({
            seller_name: productData.sellerName,
            tags: productData.tags,
            specifications: productData.specifications
-        }]).select();
+        }]);
         if (error) throw new Error(error.message);
         await get().fetchProducts();
       },

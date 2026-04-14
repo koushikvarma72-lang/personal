@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 
 export function HomePage() {
-  const { getFeaturedProducts, getDeals, getProductsByCategory, setFilters } = useProductStore();
+  const { getFeaturedProducts, getDeals, getProductsByCategory, setFilters, products } = useProductStore();
   const { addToCart } = useCartStore();
   const { showToast, setCartOpen } = useUIStore();
   
@@ -74,10 +74,10 @@ export function HomePage() {
   };
 
   const categories = [
-    { id: 'sarees', name: 'Sarees', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=300&fit=crop', count: 150 },
-    { id: 'salwar-kameez', name: 'Salwar Kameez', image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=300&fit=crop', count: 89 },
-    { id: 'lehengas', name: 'Lehengas', image: 'https://images.unsplash.com/photo-1583391733952-0e8a5ed1f57c?w=400&h=300&fit=crop', count: 45 },
-    { id: 'kurtis', name: 'Kurtis', image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=300&fit=crop', count: 200 },
+    { id: 'sarees', name: 'Sarees', image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=300&fit=crop', count: products.filter(p => p.category === 'sarees').length },
+    { id: 'salwar-kameez', name: 'Salwar Kameez', image: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?w=400&h=300&fit=crop', count: products.filter(p => p.category === 'salwar-kameez').length },
+    { id: 'lehengas', name: 'Lehengas', image: 'https://images.unsplash.com/photo-1583391733952-0e8a5ed1f57c?w=400&h=300&fit=crop', count: products.filter(p => p.category === 'lehengas').length },
+    { id: 'kurtis', name: 'Kurtis', image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=300&fit=crop', count: products.filter(p => p.category === 'kurtis').length },
   ];
 
   const testimonials = [
