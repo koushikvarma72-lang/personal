@@ -99,14 +99,23 @@ export const useAuthStore = create<AuthState>()(
           password,
         });
         if (error) {
+          // 422 = email already registered
+          if (error.status === 422 || error.message?.toLowerCase().includes('already registered') || error.message?.toLowerCase().includes('user already exists')) {
+            throw new Error('An account with this email already exists. Please sign in instead.');
+          }
           throw new Error(error.message);
+        }
+
+        // Supabase returns a user with identities=[] when email is already taken (no-email-confirm mode)
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          throw new Error('An account with this email already exists. Please sign in instead.');
         }
 
         if (data.user) {
           // ✅ INSERT into profiles table
           const { error: profileError } = await supabase.from('profiles').insert([
             {
-              id: data.user.id, // MUST match auth user id
+              id: data.user.id,
               name,
               role,
               avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,

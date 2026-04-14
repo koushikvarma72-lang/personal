@@ -66,8 +66,13 @@ export function RegisterPage() {
         showToast(`Account created successfully! Welcome as a ${userType}.`, 'success');
         navigate(userType === 'seller' ? '/seller' : '/');
       }
-    } catch (error) {
-      showToast('Registration failed. Please try again.', 'error');
+    } catch (error: any) {
+      const msg: string = error?.message || 'Registration failed. Please try again.';
+      showToast(msg, 'error');
+      // If email already exists, nudge them to login
+      if (msg.toLowerCase().includes('already exists')) {
+        setTimeout(() => navigate('/login'), 2000);
+      }
     } finally {
       setIsLoading(false);
     }
