@@ -87,7 +87,7 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e3e6e6] via-purple-50 to-orange-50 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#e3e6e6] dark:from-gray-900 via-purple-50 dark:via-gray-900 to-orange-50 dark:to-gray-900 flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
@@ -99,7 +99,7 @@ export function RegisterPage() {
           </span>
         </Link>
 
-        <Card className="shadow-xl border-0">
+        <Card className="shadow-xl border-0 dark:bg-gray-800 dark:border dark:border-gray-700">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-2xl">Create Account</CardTitle>
             <CardDescription>Join our community of buyers and sellers</CardDescription>

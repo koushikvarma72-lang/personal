@@ -25,7 +25,7 @@ export function SellerProfilePage() {
 
   if (sellerProducts.length === 0) {
     return (
-      <div className="min-h-screen bg-[#e3e6e6] flex items-center justify-center">
+      <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <Store className="w-16 h-16 mx-auto mb-4 text-gray-300" />
           <h2 className="text-xl font-bold text-gray-600 mb-2">Seller not found</h2>
@@ -36,15 +36,15 @@ export function SellerProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#e3e6e6] py-6">
+    <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 py-6">
       <div className="max-w-6xl mx-auto px-4">
         {/* Seller Header */}
-        <div className="bg-white rounded-xl p-6 mb-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 mb-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-4">
           <div className="w-20 h-20 bg-[#febd69]/20 rounded-full flex items-center justify-center flex-shrink-0">
             <Store className="w-10 h-10 text-[#febd69]" />
           </div>
           <div className="flex-1 text-center sm:text-left">
-            <h1 className="text-2xl font-bold text-[#0f1111]">{sellerName}</h1>
+            <h1 className="text-2xl font-bold text-[#0f1111] dark:text-white">{sellerName}</h1>
             <div className="flex items-center justify-center sm:justify-start gap-4 mt-2 text-sm text-gray-500">
               <span className="flex items-center gap-1">
                 <Star className="w-4 h-4 fill-[#ffa41c] text-[#ffa41c]" />
@@ -63,7 +63,7 @@ export function SellerProfilePage() {
         </div>
 
         {/* Products */}
-        <h2 className="text-xl font-bold text-[#0f1111] mb-4">Products by {sellerName}</h2>
+        <h2 className="text-xl font-bold text-[#0f1111] dark:text-white mb-4">Products by {sellerName}</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sellerProducts.map(product => (
             <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300">

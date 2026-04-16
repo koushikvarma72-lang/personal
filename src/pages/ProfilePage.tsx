@@ -89,12 +89,12 @@ export function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e3e6e6] py-6">
+    <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 py-6">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111]">Your Profile</h1>
-          <p className="text-gray-500">Manage your account settings and preferences</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white">Your Profile</h1>
+          <p className="text-gray-500 dark:text-gray-400">Manage your account settings and preferences</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
@@ -113,7 +113,7 @@ export function ProfilePage() {
                   </button>
                 </div>
                 <h2 className="text-xl font-bold">{user?.name}</h2>
-                <p className="text-gray-500">{user?.email}</p>
+                <p className="text-gray-500 dark:text-gray-400">{user?.email}</p>
                 <Badge className="mt-2 capitalize">{user?.role}</Badge>
                 
                 <div className="mt-6 space-y-3 text-left">
@@ -236,7 +236,7 @@ export function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                     <div>
                       <p className="font-medium">Change Password</p>
                       <p className="text-sm text-gray-500">A reset link will be sent to your email</p>
@@ -246,7 +246,7 @@ export function ProfilePage() {
                     </Button>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                     <div>
                       <p className="font-medium">Email Notifications</p>
                       <p className="text-sm text-gray-500">support@sareebazaar.com for preferences</p>
@@ -256,7 +256,7 @@ export function ProfilePage() {
                     </a>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                     <div>
                       <p className="font-medium text-red-600">Delete Account</p>
                       <p className="text-sm text-gray-500">Permanently delete your account and all data</p>

@@ -27,7 +27,7 @@ export function CartDrawer() {
 
   return (
     <Sheet open={isCartOpen} onOpenChange={setCartOpen}>
-      <SheetContent className="w-full sm:max-w-lg flex flex-col bg-white">
+      <SheetContent className="w-full sm:max-w-lg flex flex-col bg-white dark:bg-gray-900">
         <SheetHeader className="space-y-2.5 pb-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="flex items-center gap-2 text-xl">
@@ -66,7 +66,7 @@ export function CartDrawer() {
                 {cart.items.map((item, index) => (
                   <div 
                     key={item.product.id}
-                    className="flex gap-5 p-4 rounded-xl border border-gray-100 bg-white hover:border-[#febd69]/50 hover:shadow-sm transition-all animate-fade-in relative"
+                    className="flex gap-5 p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-[#febd69]/50 hover:shadow-sm transition-all animate-fade-in relative"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     {/* Product Image */}
@@ -132,7 +132,7 @@ export function CartDrawer() {
             <Separator className="my-4" />
 
             {/* Cart Summary */}
-            <div className="bg-gray-50 rounded-xl p-5 space-y-3 border border-gray-100">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-5 space-y-3 border border-gray-100 dark:border-gray-700">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal</span>
                 <span className="font-medium">₹{cart.total.toLocaleString()}</span>

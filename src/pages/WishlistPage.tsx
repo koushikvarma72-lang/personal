@@ -31,18 +31,18 @@ export function WishlistPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e3e6e6] py-6">
+    <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 py-6">
       <div className="max-w-5xl mx-auto px-4">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111] flex items-center gap-2">
+          <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white flex items-center gap-2">
             <Heart className="w-7 h-7 text-red-500 fill-red-500" />
             Your Wishlist
           </h1>
-          <p className="text-gray-500">{wishlistProducts.length} saved items</p>
+          <p className="text-gray-500 dark:text-gray-400">{wishlistProducts.length} saved items</p>
         </div>
 
         {wishlistProducts.length === 0 ? (
-          <div className="bg-white rounded-lg p-16 text-center">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-16 text-center">
             <Heart className="w-20 h-20 mx-auto mb-4 text-gray-200" />
             <h3 className="text-xl font-medium text-gray-600 mb-2">Your wishlist is empty</h3>
             <p className="text-gray-400 mb-6">Save items you love and come back to them later</p>
@@ -70,7 +70,7 @@ export function WishlistPage() {
                     )}
                     <button
                       onClick={(e) => { e.preventDefault(); handleRemove(product.id); }}
-                      className="absolute top-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow hover:bg-red-50 transition-colors"
+                      className="absolute top-2 right-2 w-8 h-8 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center shadow hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                     >
                       <Trash2 className="w-4 h-4 text-red-500" />
                     </button>

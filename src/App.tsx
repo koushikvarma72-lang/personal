@@ -17,7 +17,9 @@ import { OrdersPage } from '@/pages/OrdersPage';
 import { CheckoutPage } from '@/pages/CheckoutPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { WishlistPage } from '@/pages/WishlistPage';
+import { OrderConfirmationPage } from '@/pages/OrderConfirmationPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
+import { MobileNav } from '@/components/MobileNav';
 
 function App() {
   const { isAuthenticated, user } = useAuthStore();
@@ -116,66 +118,21 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-[#e3e6e6]">
+      <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900">
         <Header />
-        <main className="pt-[60px]">
+        <main className="pt-[60px] pb-16 md:pb-0">
           <Routes>
-            <Route path="/" element={
-              <BuyerRoute>
-                <HomePage />
-              </BuyerRoute>
-            } />
-            <Route path="/products" element={
-              <BuyerRoute>
-                <ProductsPage />
-              </BuyerRoute>
-            } />
-            <Route path="/product/:id" element={
-              <BuyerRoute>
-                <ProductDetailPage />
-              </BuyerRoute>
-            } />
+            <Route path="/" element={<BuyerRoute><HomePage /></BuyerRoute>} />
+            <Route path="/products" element={<BuyerRoute><ProductsPage /></BuyerRoute>} />
+            <Route path="/product/:id" element={<BuyerRoute><ProductDetailPage /></BuyerRoute>} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route 
-              path="/seller" 
-              element={
-                <ProtectedRoute requireSeller>
-                  <SellerDashboard />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/orders" 
-              element={
-                <ProtectedRoute>
-                  <OrdersPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/checkout" 
-              element={
-                <ProtectedRoute requireBuyer>
-                  <CheckoutPage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route path="/profile" 
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              } 
-            />
-            <Route
-              path="/wishlist"
-              element={
-                <ProtectedRoute>
-                  <WishlistPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/seller" element={<ProtectedRoute requireSeller><SellerDashboard /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+            <Route path="/checkout" element={<ProtectedRoute requireBuyer><CheckoutPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
+            <Route path="/order-confirmation/:orderId" element={<ProtectedRoute><OrderConfirmationPage /></ProtectedRoute>} />
             <Route path="/seller/:sellerId" element={<SellerProfilePage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
@@ -183,6 +140,7 @@ function App() {
         <Footer />
         <CartDrawer />
         <Toast />
+        <MobileNav />
       </div>
     </Router>
   );

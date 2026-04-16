@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Filter, Grid3X3, List, Star, ShoppingCart,
-  ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight
+  ChevronDown, SlidersHorizontal, X, ChevronLeft, ChevronRight, Eye
 } from 'lucide-react';
 import { useProductStore, useCartStore, useUIStore } from '@/store';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import type { ProductCategory } from '@/types';
+import { SkeletonGrid } from '@/components/SkeletonCard';
+import { QuickViewModal } from '@/components/QuickViewModal';
+import type { Product, ProductCategory } from '@/types';
 
 const PAGE_SIZE = 12;
 
@@ -25,6 +27,7 @@ export function ProductsPage() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [priceRange, setPriceRange] = useState([0, 50000]);
   const [page, setPage] = useState(1);
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
   const categories: { id: ProductCategory; name: string; count: number }[] = [
     { id: 'sarees', name: 'Sarees', count: products.filter(p => p.category === 'sarees').length },
@@ -158,17 +161,18 @@ export function ProductsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#e3e6e6] py-6">
+    <>
+      <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 py-6">
       <div className="max-w-7xl mx-auto px-4">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
           <Link to="/" className="hover:text-[#007185]">Home</Link>
           <span>/</span>
-          <span className="text-[#0f1111]">Products</span>
+          <span className="text-[#0f1111] dark:text-white">Products</span>
           {filters.category && (
             <>
               <span>/</span>
-              <span className="text-[#0f1111]">
+              <span className="text-[#0f1111] dark:text-white">
                 {categories.find(c => c.id === filters.category)?.name}
               </span>
             </>
@@ -176,10 +180,10 @@ export function ProductsPage() {
         </div>
 
         {/* Header */}
-        <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-4 mb-4 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-[#0f1111]">
+              <h1 className="text-2xl font-bold text-[#0f1111] dark:text-white">
                 {filters.category 
                   ? categories.find(c => c.id === filters.category)?.name 
                   : 'All Products'
@@ -196,7 +200,7 @@ export function ProductsPage() {
                 <select
                   value={filters.sortBy || 'popular'}
                   onChange={(e) => setFilters({ ...filters, sortBy: e.target.value as any })}
-                  className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-10 text-sm focus:outline-none focus:border-[#febd69] cursor-pointer"
+                  className="appearance-none bg-white dark:bg-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-10 text-sm focus:outline-none focus:border-[#febd69] cursor-pointer"
                 >
                   {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -211,13 +215,13 @@ export function ProductsPage() {
               <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                 <button
                   onClick={() => setViewMode('grid')}
-                  className={`p-2 ${viewMode === 'grid' ? 'bg-[#febd69] text-[#131921]' : 'bg-white hover:bg-gray-100'}`}
+                  className={`p-2 ${viewMode === 'grid' ? 'bg-[#febd69] text-[#131921]' : 'bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'}`}
                 >
                   <Grid3X3 className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
-                  className={`p-2 ${viewMode === 'list' ? 'bg-[#febd69] text-[#131921]' : 'bg-white hover:bg-gray-100'}`}
+                  className={`p-2 ${viewMode === 'list' ? 'bg-[#febd69] text-[#131921]' : 'bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'}`}
                 >
                   <List className="w-5 h-5" />
                 </button>
@@ -252,19 +256,14 @@ export function ProductsPage() {
         <div className="flex gap-6">
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="bg-white rounded-lg p-4 shadow-sm sticky top-24">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm sticky top-24">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-bold text-lg flex items-center gap-2">
                   <Filter className="w-5 h-5" />
                   Filters
                 </h2>
                 {activeFiltersCount > 0 && (
-                  <button 
-                    onClick={clearFilters}
-                    className="text-sm text-[#007185] hover:text-[#febd69]"
-                  >
-                    Clear
-                  </button>
+                  <button onClick={clearFilters} className="text-sm text-[#007185] hover:text-[#febd69]">Clear</button>
                 )}
               </div>
               <FilterSidebar />
@@ -273,8 +272,10 @@ export function ProductsPage() {
 
           {/* Product Grid */}
           <div className="flex-1">
-            {filteredProducts.length === 0 ? (
-              <div className="bg-white rounded-lg p-12 text-center">
+            {products.length === 0 ? (
+              <SkeletonGrid count={8} />
+            ) : filteredProducts.length === 0 ? (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-12 text-center">
                 <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Filter className="w-12 h-12 text-gray-400" />
                 </div>
@@ -305,6 +306,7 @@ export function ProductsPage() {
                           <img
                             src={product.images[0]}
                             alt={product.name}
+                            loading="lazy"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
                           {product.originalPrice && (
@@ -321,6 +323,15 @@ export function ProductsPage() {
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                               <span className="bg-white text-gray-800 text-xs font-bold px-2 py-1 rounded">Out of Stock</span>
                             </div>
+                          )}
+                          {/* Quick View button */}
+                          {viewMode === 'grid' && (
+                            <button
+                              onClick={(e) => { e.preventDefault(); setQuickViewProduct(product); }}
+                              className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white text-[#131921] text-xs font-medium px-3 py-1.5 rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 whitespace-nowrap"
+                            >
+                              <Eye className="w-3 h-3" />Quick View
+                            </button>
                           )}
                         </div>
                       </Link>
@@ -349,7 +360,7 @@ export function ProductsPage() {
                           </div>
                           <div className="flex flex-wrap gap-1 mb-3">
                             {product.tags.slice(0, 3).map((tag) => (
-                              <span key={tag} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">{tag}</span>
+                              <span key={tag} className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-1 rounded">{tag}</span>
                             ))}
                           </div>
                         </div>
@@ -407,5 +418,7 @@ export function ProductsPage() {
         </div>
       </div>
     </div>
+    <QuickViewModal product={quickViewProduct} onClose={() => setQuickViewProduct(null)} />
+    </>
   );
 }

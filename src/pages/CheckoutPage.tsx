@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, Truck, Shield, Check, Lock, User, Package } from 'lucide-react';
+import { CreditCard, Truck, Shield, Check, Lock, User, Package, Tag } from 'lucide-react';
 import { useCartStore, useAuthStore, useOrderStore, useUIStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,12 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { Address } from '@/types';
 
+const VALID_COUPONS: Record<string, number> = {
+  'SAVE10': 10,
+  'FIRST20': 20,
+  'SAREE15': 15,
+};
+
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, clearCart } = useCartStore();
@@ -20,6 +26,8 @@ export function CheckoutPage() {
   
   const [activeStep, setActiveStep] = useState<string>('address');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; percent: number } | null>(null);
   
   const [address, setAddress] = useState<Address>({
     street: user?.address?.street || '',
@@ -32,11 +40,23 @@ export function CheckoutPage() {
   const [deliveryOption, setDeliveryOption] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('cod');
 
-  const discount = cart.total > 5000 ? Math.round(cart.total * 0.1) : 0;
+  const baseDiscount = cart.total > 5000 ? Math.round(cart.total * 0.1) : 0;
+  const couponDiscount = appliedCoupon ? Math.round(cart.total * appliedCoupon.percent / 100) : 0;
+  const discount = baseDiscount + couponDiscount;
   const standardDeliveryCost = cart.total > 999 ? 0 : 99;
   const delivery = deliveryOption === 'express' ? 149 : standardDeliveryCost;
   const tax = Math.round(cart.total * 0.05);
   const finalTotal = cart.total - discount + delivery + tax;
+
+  const handleApplyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+    if (VALID_COUPONS[code]) {
+      setAppliedCoupon({ code, percent: VALID_COUPONS[code] });
+      showToast(`Coupon applied! ${VALID_COUPONS[code]}% off`, 'success');
+    } else {
+      showToast('Invalid coupon code', 'error');
+    }
+  };
 
   const handlePlaceOrder = async () => {
     setIsProcessing(true);
@@ -66,7 +86,7 @@ export function CheckoutPage() {
       if (!orderId) throw new Error('Failed to create order');
       clearCart();
       showToast('Order placed successfully!', 'success');
-      navigate('/orders');
+      navigate(`/order-confirmation/${orderId}`);
     } catch {
       showToast('Failed to place order. Please try again.', 'error');
     } finally {
@@ -76,7 +96,7 @@ export function CheckoutPage() {
 
   if (cart.items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#e3e6e6] flex items-center justify-center">
+      <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 flex items-center justify-center">
         <Card className="max-w-md w-full mx-4">
           <CardContent className="p-8 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -94,10 +114,10 @@ export function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#e3e6e6] py-8">
+    <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 py-8">
       <div className="max-w-6xl mx-auto px-4 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#0f1111]">Secure Checkout</h1>
+          <h1 className="text-3xl font-bold text-[#0f1111] dark:text-white">Secure Checkout</h1>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
@@ -112,7 +132,7 @@ export function CheckoutPage() {
             >
               
               {/* Login Status */}
-              <AccordionItem value="login" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden px-6">
+              <AccordionItem value="login" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden px-6">
                 <AccordionTrigger className="hover:no-underline py-6">
                   <div className="flex items-center gap-4">
                     <div className="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><Check className="w-5 h-5" /></div>
@@ -127,7 +147,7 @@ export function CheckoutPage() {
               </AccordionItem>
 
               {/* Delivery Address */}
-              <AccordionItem value="address" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden px-6">
+              <AccordionItem value="address" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden px-6">
                 <AccordionTrigger className="hover:no-underline py-6">
                   <div className="flex items-center gap-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeStep === 'address' ? 'bg-[#febd69] text-[#131921]' : 'bg-gray-200'}`}>2</div>
@@ -165,7 +185,7 @@ export function CheckoutPage() {
               </AccordionItem>
 
               {/* Delivery Options */}
-              <AccordionItem value="delivery" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden px-6">
+              <AccordionItem value="delivery" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden px-6">
                 <AccordionTrigger className="hover:no-underline py-6">
                   <div className="flex items-center gap-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeStep === 'delivery' ? 'bg-[#febd69] text-[#131921]' : 'bg-gray-200'}`}>3</div>
@@ -180,7 +200,7 @@ export function CheckoutPage() {
                 <AccordionContent className="pb-6">
                   <div className="pl-12">
                     <RadioGroup value={deliveryOption} onValueChange={setDeliveryOption} className="space-y-4">
-                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${deliveryOption === 'standard' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50'}`}>
+                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${deliveryOption === 'standard' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                         <RadioGroupItem value="standard" />
                         <div className="flex-1">
                           <p className="font-bold text-base">Standard Delivery</p>
@@ -188,7 +208,7 @@ export function CheckoutPage() {
                         </div>
                         <span className="font-bold text-green-600">{standardDeliveryCost === 0 ? 'FREE' : `₹${standardDeliveryCost}`}</span>
                       </Label>
-                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${deliveryOption === 'express' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50'}`}>
+                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${deliveryOption === 'express' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                         <RadioGroupItem value="express" />
                         <div className="flex-1">
                           <p className="font-bold text-base">Express Delivery</p>
@@ -203,7 +223,7 @@ export function CheckoutPage() {
               </AccordionItem>
 
               {/* Payment Method */}
-              <AccordionItem value="payment" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden px-6">
+              <AccordionItem value="payment" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden px-6">
                 <AccordionTrigger className="hover:no-underline py-6">
                   <div className="flex items-center gap-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeStep === 'payment' ? 'bg-[#febd69] text-[#131921]' : 'bg-gray-200'}`}>4</div>
@@ -218,15 +238,15 @@ export function CheckoutPage() {
                 <AccordionContent className="pb-6">
                   <div className="pl-12">
                     <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
-                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50'}`}>
+                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                         <RadioGroupItem value="cod" />
                         <div className="flex-1"><p className="font-bold text-base">Cash on Delivery</p><p className="text-sm text-gray-500">Pay when you receive</p></div><Truck className="w-6 h-6 text-gray-400" />
                       </Label>
-                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'card' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50'}`}>
+                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'card' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                         <RadioGroupItem value="card" />
                         <div className="flex-1"><p className="font-bold text-base">Credit/Debit Card</p><p className="text-sm text-gray-500">Visa, Mastercard, RuPay</p></div><CreditCard className="w-6 h-6 text-gray-400" />
                       </Label>
-                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'upi' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50'}`}>
+                      <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'upi' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                         <RadioGroupItem value="upi" />
                         <div className="flex-1"><p className="font-bold text-base">UPI</p><p className="text-sm text-gray-500">Google Pay, PhonePe, Paytm</p></div>
                         <div className="w-6 h-6 bg-purple-600 rounded flex items-center justify-center text-white text-xs font-bold">U</div>
@@ -238,7 +258,7 @@ export function CheckoutPage() {
               </AccordionItem>
 
               {/* Review */}
-              <AccordionItem value="review" className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden px-6">
+              <AccordionItem value="review" className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden px-6">
                 <AccordionTrigger className="hover:no-underline py-6">
                   <div className="flex items-center gap-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activeStep === 'review' ? 'bg-[#febd69] text-[#131921]' : 'bg-gray-200'}`}>5</div>
@@ -247,7 +267,7 @@ export function CheckoutPage() {
                 </AccordionTrigger>
                 <AccordionContent className="pb-6">
                   <div className="pl-12 space-y-5">
-                    <div className="border border-gray-200 rounded-xl p-5 bg-gray-50">
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 bg-gray-50 dark:bg-gray-700/50">
                       <h4 className="font-bold text-lg mb-4 flex items-center gap-2"><Package className="w-5 h-5"/> Items ({cart.itemCount})</h4>
                       <div className="space-y-4">
                         {cart.items.map((item) => (
@@ -298,15 +318,38 @@ export function CheckoutPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm"><span className="text-gray-600">Items ({cart.itemCount}):</span><span>₹{cart.total.toLocaleString()}</span></div>
                   {discount > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount:</span><span>-₹{discount.toLocaleString()}</span></div>}
+                  {appliedCoupon && <div className="flex justify-between text-sm text-green-600"><span>Coupon ({appliedCoupon.code}):</span><span>-{appliedCoupon.percent}%</span></div>}
                   <div className="flex justify-between text-sm"><span className="text-gray-600">Delivery:</span><span className={delivery === 0 ? 'text-green-600' : ''}>{delivery === 0 ? 'FREE' : `₹${delivery}`}</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-600">Taxes (5%):</span><span>₹{tax.toLocaleString()}</span></div>
+
+                  {/* Coupon Input */}
+                  <div className="pt-2">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Tag className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <Input
+                          placeholder="Coupon code"
+                          value={couponCode}
+                          onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                          className="pl-8 h-8 text-sm"
+                          disabled={!!appliedCoupon}
+                        />
+                      </div>
+                      {appliedCoupon ? (
+                        <Button size="sm" variant="outline" className="h-8 text-red-500" onClick={() => { setAppliedCoupon(null); setCouponCode(''); }}>Remove</Button>
+                      ) : (
+                        <Button size="sm" className="h-8 bg-[#febd69] hover:bg-[#f90] text-[#131921]" onClick={handleApplyCoupon}>Apply</Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">Try: SAVE10, FIRST20, SAREE15</p>
+                  </div>
                   
                   <Separator className="my-2" />
                   
                   <div className="flex justify-between items-center"><span className="font-bold text-lg text-[#b12704]">Order Total:</span><span className="font-black text-2xl text-[#b12704]">₹{finalTotal.toLocaleString()}</span></div>
                 </div>
 
-                <div className="bg-green-50/50 p-4 rounded-xl flex items-start gap-3 mt-4 border border-green-100">
+                <div className="bg-green-50/50 dark:bg-green-900/20 p-4 rounded-xl flex items-start gap-3 mt-4 border border-green-100">
                   <Shield className="w-6 h-6 text-green-600 flex-shrink-0" />
                   <p className="text-xs text-green-800 leading-snug">Safe and secure payments. 100% Authentic products.</p>
                 </div>

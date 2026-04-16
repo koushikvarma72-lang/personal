@@ -100,7 +100,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e3e6e6] via-purple-50 to-orange-50 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#e3e6e6] dark:from-gray-900 via-purple-50 dark:via-gray-900 to-orange-50 dark:to-gray-900 flex items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
@@ -112,7 +112,7 @@ export function LoginPage() {
           </span>
         </Link>
 
-        <Card className="shadow-xl border-0">
+        <Card className="shadow-xl border-0 dark:bg-gray-800 dark:border dark:border-gray-700">
           <CardHeader className="text-center pb-2">
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
             <CardDescription>Sign in to your account to continue</CardDescription>
@@ -176,7 +176,7 @@ export function LoginPage() {
               {/* Forgot Password */}
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="rounded border-gray-300" />
+                  <input type="checkbox" className="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700" />
                   <span className="text-gray-600">Remember me</span>
                 </label>
                 <Link to="#" className="text-[#007185] hover:text-[#febd69]">
@@ -196,7 +196,7 @@ export function LoginPage() {
 
             {/* Role Mismatch Switch UI */}
             {showSwitchOption && currentRole && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3 text-center">
+              <div className="rounded-xl border border-amber-200 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 p-4 space-y-3 text-center">
                 <div className="flex items-center justify-center gap-2 text-amber-700">
                   <ArrowRightLeft className="w-5 h-5" />
                   <p className="text-sm font-medium">

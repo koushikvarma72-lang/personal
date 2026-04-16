@@ -177,7 +177,7 @@ export function HomePage() {
                   alt="Traditional Saree"
                   className="rounded-2xl shadow-2xl transform rotate-3 hover:rotate-0 transition-transform duration-500"
                 />
-                <div className="absolute -bottom-4 -left-4 bg-white rounded-lg p-4 shadow-xl">
+                <div className="absolute -bottom-4 -left-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-xl">
                   <div className="flex items-center gap-2">
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
@@ -195,7 +195,7 @@ export function HomePage() {
       </section>
 
       {/* Features Bar */}
-      <section className="bg-white py-6 border-b">
+      <section className="bg-white dark:bg-gray-800 py-6 border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
@@ -204,7 +204,7 @@ export function HomePage() {
               { icon: RefreshCw, text: 'Easy Returns', subtext: '30-day return policy' },
               { icon: TrendingUp, text: 'Best Prices', subtext: 'Direct from artisans' },
             ].map((feature, index) => (
-              <div key={index} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+              <div key={index} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:bg-gray-800/50 transition-colors">
                 <div className="w-12 h-12 bg-[#febd69]/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <feature.icon className="w-6 h-6 text-[#febd69]" />
                 </div>
@@ -222,7 +222,7 @@ export function HomePage() {
       <section className="py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111]">Shop by Category</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white">Shop by Category</h2>
             <Link to="/products" className="text-[#007185] hover:text-[#febd69] flex items-center gap-1 transition-colors">
               See All <ArrowRight className="w-4 h-4" />
             </Link>
@@ -310,7 +310,7 @@ export function HomePage() {
       <section className="py-12 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111]">Featured Products</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white">Featured Products</h2>
             <div className="flex gap-2">
               <button
                 onClick={() => scroll('left')}
@@ -394,11 +394,11 @@ export function HomePage() {
       </section>
 
       {/* Sarees Section */}
-      <section className="py-12 px-4 bg-white">
+      <section className="py-12 px-4 bg-white dark:bg-gray-800">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111]">Exquisite Sarees</h2>
+              <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white">Exquisite Sarees</h2>
               <p className="text-gray-500 mt-1">Handwoven traditions from across India</p>
             </div>
             <Link to="/products" onClick={() => setFilters({ category: 'sarees' })}>
@@ -410,7 +410,7 @@ export function HomePage() {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {sarees.length === 0 ? (
-              <div className="col-span-4 bg-gray-50 rounded-xl p-10 text-center">
+              <div className="col-span-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-10 text-center">
                 <Store className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <p className="text-gray-500 mb-3">No sarees listed yet</p>
                 <Link to="/register"><Button size="sm" className="bg-[#febd69] hover:bg-[#f90] text-[#131921]">Sell Sarees</Button></Link>
@@ -448,9 +448,9 @@ export function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-12 px-4 bg-gray-50">
+      <section className="py-12 px-4 bg-gray-50 dark:bg-gray-900/50">
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] text-center mb-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white text-center mb-8">
             What Our Customers Say
           </h2>
           
@@ -485,9 +485,9 @@ export function HomePage() {
 
       {/* Recently Viewed */}
       {recentlyViewed.length > 0 && (
-        <section className="py-12 px-4 bg-white">
+        <section className="py-12 px-4 bg-white dark:bg-gray-800">
           <div className="max-w-7xl mx-auto">
-            <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] mb-6">Recently Viewed</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white mb-6">Recently Viewed</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {recentlyViewed.map(product => (
                 <Card key={product.id} className="group hover:shadow-lg transition-all overflow-hidden">

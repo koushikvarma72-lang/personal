@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 import { 
   Search, ShoppingCart, MapPin, User, Menu, X,
-  Package, LogOut, Store, ChevronDown, Heart
+  Package, LogOut, Store, ChevronDown, Heart, Sun, Moon
 } from 'lucide-react';
 import { useAuthStore, useCartStore, useUIStore, useProductStore } from '@/store';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ export function Header() {
   const { cart } = useCartStore();
   const { setCartOpen } = useUIStore();
   const { setFilters, products } = useProductStore();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   
   const [isScrolled, setIsScrolled] = useState(false);
@@ -25,6 +27,14 @@ export function Header() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  const getSearchHistory = (): string[] => {
+    try { return JSON.parse(localStorage.getItem('search-history') || '[]'); } catch { return []; }
+  };
+  const addSearchHistory = (q: string) => {
+    const h = [q, ...getSearchHistory().filter(x => x !== q)].slice(0, 5);
+    localStorage.setItem('search-history', JSON.stringify(h));
+  };
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -44,7 +54,11 @@ export function Header() {
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    if (value.trim().length < 2) { setSuggestions([]); return; }
+    if (value.trim().length < 2) {
+      // Show history when empty
+      setSuggestions(value.trim().length === 0 ? getSearchHistory().map(h => `🕐 ${h}`) : []);
+      return;
+    }
     const q = value.toLowerCase();
     const matches = [...new Set(
       products
@@ -57,6 +71,7 @@ export function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
+      addSearchHistory(searchQuery.trim());
       setFilters({ search: searchQuery });
       setSuggestions([]);
       navigate('/products');
@@ -64,8 +79,10 @@ export function Header() {
   };
 
   const handleSuggestionClick = (name: string) => {
-    setSearchQuery(name);
-    setFilters({ search: name });
+    const clean = name.replace('🕐 ', '');
+    setSearchQuery(clean);
+    addSearchHistory(clean);
+    setFilters({ search: clean });
     setSuggestions([]);
     navigate('/products');
   };
@@ -131,7 +148,7 @@ export function Header() {
                     placeholder="Search for sarees, kurtis, jewelry..."
                     value={searchQuery}
                     onChange={(e) => handleSearchChange(e.target.value)}
-                    onFocus={() => setIsSearchFocused(true)}
+                    onFocus={() => { setIsSearchFocused(true); if (!searchQuery.trim()) setSuggestions(getSearchHistory().map(h => `🕐 ${h}`)); }}
                     onBlur={() => setIsSearchFocused(false)}
                     className="flex-1 rounded-none border-none bg-white text-[#0f1111] placeholder:text-gray-500 h-10 focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
@@ -141,12 +158,12 @@ export function Header() {
                 </div>
               </form>
               {suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-b-lg shadow-xl z-50 mt-0.5">
+                <div className="absolute top-full left-0 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-b-lg shadow-xl z-50 mt-0.5">
                   {suggestions.map((s, i) => (
                     <button
                       key={i}
                       onMouseDown={() => handleSuggestionClick(s)}
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#febd69]/10 flex items-center gap-2 border-b last:border-0"
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-[#febd69]/10 dark:hover:bg-gray-700 flex items-center gap-2 border-b dark:border-gray-700 last:border-0 dark:text-gray-200"
                     >
                       <Search className="w-3 h-3 text-gray-400 flex-shrink-0" />
                       {s}
@@ -238,6 +255,14 @@ export function Header() {
             )}
 
             <button 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="text-white/90 hover:text-white p-2 hover:bg-white/10 rounded transition-colors"
+              title="Toggle dark mode"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
+            <button 
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="lg:hidden text-white p-2 hover:bg-white/10 rounded transition-colors"
             >
@@ -269,7 +294,7 @@ export function Header() {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[60] lg:hidden">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-80 bg-white shadow-2xl overflow-y-auto animate-slide-in-left">
+          <div className="absolute left-0 top-0 bottom-0 w-80 bg-white dark:bg-gray-900 shadow-2xl overflow-y-auto animate-slide-in-left">
             <div className="bg-[#232f3e] text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <User className="w-8 h-8" />
@@ -280,35 +305,35 @@ export function Header() {
               </button>
             </div>
             <div className="p-4">
-              <h3 className="font-medium text-lg mb-3">Shop by Category</h3>
+              <h3 className="font-medium text-lg mb-3 dark:text-white">Shop by Category</h3>
               <div className="space-y-2">
                 {categories.map(cat => (
-                  <Link key={cat.id} to="/products" onClick={() => { setFilters({ category: cat.id as any }); setIsMobileMenuOpen(false); }} className="block py-2 px-3 rounded hover:bg-gray-100 transition-colors">
+                  <Link key={cat.id} to="/products" onClick={() => { setFilters({ category: cat.id as any }); setIsMobileMenuOpen(false); }} className="block py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200 transition-colors">
                     {cat.name}
                   </Link>
                 ))}
               </div>
-              <div className="border-t my-4" />
-              <h3 className="font-medium text-lg mb-3">Help & Settings</h3>
+              <div className="border-t dark:border-gray-700 my-4" />
+              <h3 className="font-medium text-lg mb-3 dark:text-white">Help & Settings</h3>
               <div className="space-y-2">
                 {isAuthenticated ? (
                   <>
-                    <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded hover:bg-gray-100">Your Account</Link>
+                    <Link to="/profile" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200">Your Account</Link>
                     {user?.role !== 'seller' && (
                       <>
-                        <Link to="/orders" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded hover:bg-gray-100">Your Orders</Link>
-                        <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded hover:bg-gray-100">Wishlist</Link>
+                        <Link to="/orders" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200">Your Orders</Link>
+                        <Link to="/wishlist" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200">Wishlist</Link>
                       </>
                     )}
                     {user?.role === 'seller' && (
-                      <Link to="/seller" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded hover:bg-gray-100">Seller Dashboard</Link>
+                      <Link to="/seller" onClick={() => setIsMobileMenuOpen(false)} className="block py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200">Seller Dashboard</Link>
                     )}
-                    <button onClick={handleLogout} className="block w-full text-left py-2 px-3 rounded hover:bg-gray-100 text-red-600">Sign Out</button>
+                    <button onClick={handleLogout} className="block w-full text-left py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600">Sign Out</button>
                   </>
                 ) : (
                   <>
-                    <Link to="/login" className="block py-2 px-3 rounded hover:bg-gray-100">Sign In</Link>
-                    <Link to="/register" className="block py-2 px-3 rounded hover:bg-gray-100">Create Account</Link>
+                    <Link to="/login" className="block py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200">Sign In</Link>
+                    <Link to="/register" className="block py-2 px-3 rounded hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-200">Create Account</Link>
                   </>
                 )}
               </div>

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { 
   Plus, Package, DollarSign, ShoppingBag, TrendingUp,
-  Edit, Trash2, Search
+  Edit, Trash2, Search, Copy, PlusCircle, MinusCircle
 } from 'lucide-react';
 import { useProductStore, useAuthStore, useUIStore, useOrderStore } from '@/store';
 import { Button } from '@/components/ui/button';
@@ -32,6 +32,7 @@ export function SellerDashboard() {
   const [formData, setFormData] = useState({
     name: '', description: '', price: '', originalPrice: '',
     category: '' as ProductCategory, stock: '', images: ['', '', '', ''], tags: '',
+    specs: [{ key: '', value: '' }] as { key: string; value: string }[],
   });
 
   const sellerOrders = getSellerOrders(user?.id || '');
@@ -94,7 +95,7 @@ export function SellerDashboard() {
       stock: Number(formData.stock), status: 'active' as ProductStatus,
       sellerId: user?.id || '', sellerName: user?.name || '',
       tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-      specifications: {},
+      specifications: Object.fromEntries(formData.specs.filter(s => s.key && s.value).map(s => [s.key, s.value])),
     };
 
     setIsSubmitting(true);
@@ -116,25 +117,35 @@ export function SellerDashboard() {
     }
   };
 
-  const resetForm = () => setFormData({ name: '', description: '', price: '', originalPrice: '', category: '' as ProductCategory, stock: '', images: ['', '', '', ''], tags: '' });
+  const resetForm = () => setFormData({ name: '', description: '', price: '', originalPrice: '', category: '' as ProductCategory, stock: '', images: ['', '', '', ''], tags: '', specs: [{ key: '', value: '' }] });
   const handleEdit = (product: any) => {
     setEditingProduct(product);
     const imgs = [...product.images, '', '', '', ''].slice(0, 4);
-    setFormData({ name: product.name, description: product.description, price: product.price.toString(), originalPrice: product.originalPrice?.toString() || '', category: product.category, stock: product.stock.toString(), images: imgs, tags: product.tags.join(', ') });
+    const specs = Object.entries(product.specifications || {}).map(([key, value]) => ({ key, value: value as string }));
+    if (specs.length === 0) specs.push({ key: '', value: '' });
+    setFormData({ name: product.name, description: product.description, price: product.price.toString(), originalPrice: product.originalPrice?.toString() || '', category: product.category, stock: product.stock.toString(), images: imgs, tags: product.tags.join(', '), specs });
     setIsAddDialogOpen(true);
   };
   const handleDelete = (productId: string) => { if (confirm('Are you sure you want to delete this product?')) { deleteProduct(productId); showToast('Product deleted successfully!', 'success'); } };
+  const handleDuplicate = (product: any) => {
+    const imgs = [...product.images, '', '', '', ''].slice(0, 4);
+    const specs = Object.entries(product.specifications || {}).map(([key, value]) => ({ key, value: value as string }));
+    if (specs.length === 0) specs.push({ key: '', value: '' });
+    setEditingProduct(null);
+    setFormData({ name: `${product.name} (Copy)`, description: product.description, price: product.price.toString(), originalPrice: product.originalPrice?.toString() || '', category: product.category, stock: product.stock.toString(), images: imgs, tags: product.tags.join(', '), specs });
+    setIsAddDialogOpen(true);
+  };
 
   const categories: { id: ProductCategory; name: string }[] = [ { id: 'sarees', name: 'Sarees' }, { id: 'salwar-kameez', name: 'Salwar Kameez' }, { id: 'lehengas', name: 'Lehengas' }, { id: 'kurtis', name: 'Kurtis' }, { id: 'dupattas', name: 'Dupattas' }, { id: 'jewelry', name: 'Jewelry' }, { id: 'accessories', name: 'Accessories' } ];
 
   return (
-    <div className="min-h-screen bg-[#e3e6e6] py-6">
+    <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 py-6">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111]">Seller Dashboard</h1>
-            <p className="text-gray-500">Welcome back, {user?.name}</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white">Seller Dashboard</h1>
+            <p className="text-gray-500 dark:text-gray-400">Welcome back, {user?.name}</p>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
@@ -183,6 +194,25 @@ export function SellerDashboard() {
                   ))}
                 </div>
                 <div className="space-y-2"><Label>Tags (comma separated)</Label><Input value={formData.tags} onChange={(e) => setFormData({ ...formData, tags: e.target.value })} /></div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label>Specifications (e.g. Fabric: Silk)</Label>
+                    <button type="button" onClick={() => setFormData({ ...formData, specs: [...formData.specs, { key: '', value: '' }] })} className="text-[#007185] hover:text-[#febd69] flex items-center gap-1 text-xs">
+                      <PlusCircle className="w-3 h-3" />Add row
+                    </button>
+                  </div>
+                  {formData.specs.map((spec, idx) => (
+                    <div key={idx} className="flex gap-2">
+                      <Input placeholder="Key (e.g. Fabric)" value={spec.key} onChange={e => { const s = [...formData.specs]; s[idx].key = e.target.value; setFormData({ ...formData, specs: s }); }} className="flex-1" />
+                      <Input placeholder="Value (e.g. Silk)" value={spec.value} onChange={e => { const s = [...formData.specs]; s[idx].value = e.target.value; setFormData({ ...formData, specs: s }); }} className="flex-1" />
+                      {formData.specs.length > 1 && (
+                        <button type="button" onClick={() => setFormData({ ...formData, specs: formData.specs.filter((_, i) => i !== idx) })} className="text-red-400 hover:text-red-600">
+                          <MinusCircle className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
                 <div className="flex gap-3 pt-4"><Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)} className="flex-1">Cancel</Button><Button type="submit" disabled={isSubmitting} className="flex-1 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-bold">{isSubmitting ? <><div className="w-4 h-4 border-2 border-[#131921] border-t-transparent rounded-full animate-spin mr-2" />Saving...</> : editingProduct ? 'Update Product' : 'Add Product'}</Button></div>
               </form>
             </DialogContent>
@@ -192,7 +222,14 @@ export function SellerDashboard() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="w-full justify-start border-b rounded-none pb-px bg-transparent h-auto">
             <TabsTrigger value="analytics" className="data-[state=active]:border-b-2 data-[state=active]:border-[#febd69] data-[state=active]:bg-transparent rounded-none px-6 py-3">Analytics & Overview</TabsTrigger>
-            <TabsTrigger value="orders" className="data-[state=active]:border-b-2 data-[state=active]:border-[#febd69] data-[state=active]:bg-transparent rounded-none px-6 py-3">Order Management</TabsTrigger>
+            <TabsTrigger value="orders" className="data-[state=active]:border-b-2 data-[state=active]:border-[#febd69] data-[state=active]:bg-transparent rounded-none px-6 py-3 relative">
+              Order Management
+              {pendingOrders > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                  {pendingOrders}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="products" className="data-[state=active]:border-b-2 data-[state=active]:border-[#febd69] data-[state=active]:bg-transparent rounded-none px-6 py-3">Your Products</TabsTrigger>
           </TabsList>
 
@@ -268,8 +305,8 @@ export function SellerDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 tracking-wider text-sm">Order ID</th>
+                      <tr className="border-b dark:border-gray-700">
+                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400 tracking-wider text-sm">Order ID</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-500 tracking-wider text-sm">Product</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-500 tracking-wider text-sm">Buyer Date & Loc.</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-500 tracking-wider text-sm">Qty x Price</th>
@@ -281,7 +318,7 @@ export function SellerDashboard() {
                         <tr><td colSpan={5} className="py-8 text-center text-gray-500">No orders placed yet.</td></tr>
                       )}
                       {sellerOrders.map(order => order.items.filter(i => i.sellerId === user?.id).map((item, idx) => (
-                        <tr key={`${order.id}-${idx}`} className="border-b hover:bg-gray-50">
+                        <tr key={`${order.id}-${idx}`} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="py-4 px-4 text-sm font-medium text-gray-900">{order.id.slice(-8)}</td>
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-3">
@@ -344,8 +381,8 @@ export function SellerDashboard() {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm tracking-wider">Product</th>
+                      <tr className="border-b dark:border-gray-700">
+                        <th className="text-left py-3 px-4 font-medium text-gray-500 dark:text-gray-400 text-sm tracking-wider">Product</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm tracking-wider">Category</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm tracking-wider">Price</th>
                         <th className="text-left py-3 px-4 font-medium text-gray-500 text-sm tracking-wider">Stock</th>
@@ -355,7 +392,7 @@ export function SellerDashboard() {
                     </thead>
                     <tbody>
                       {filteredProducts.map((product) => (
-                        <tr key={product.id} className="border-b hover:bg-gray-50">
+                        <tr key={product.id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-3">
                               <img src={product.images[0]} alt={product.name} className="w-12 h-12 rounded object-cover" />
@@ -366,7 +403,7 @@ export function SellerDashboard() {
                           <td className="py-3 px-4"><div><span className="font-medium">₹{product.price.toLocaleString()}</span>{product.originalPrice && (<span className="text-sm text-gray-400 line-through ml-2">₹{product.originalPrice.toLocaleString()}</span>)}</div></td>
                           <td className="py-3 px-4"><span className={product.stock < 10 ? 'text-red-600 font-medium' : ''}>{product.stock}</span></td>
                           <td className="py-3 px-4"><Badge className={product.status === 'active' ? 'bg-green-500 cursor-pointer' : 'bg-gray-500 cursor-pointer'} onClick={() => { updateProduct(product.id, { status: product.status === 'active' ? 'inactive' : 'active' }); showToast(`Product ${product.status === 'active' ? 'deactivated' : 'activated'}.`, 'success'); }}>{product.status}</Badge></td>
-                          <td className="py-3 px-4"><div className="flex gap-2"><button onClick={() => handleEdit(product)} className="p-2 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"><Edit className="w-4 h-4" /></button><button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button></div></td>
+                          <td className="py-3 px-4"><div className="flex gap-2"><button onClick={() => handleEdit(product)} className="p-2 hover:bg-blue-100 rounded-lg text-blue-600 transition-colors"><Edit className="w-4 h-4" /></button><button onClick={() => handleDuplicate(product)} className="p-2 hover:bg-yellow-100 rounded-lg text-yellow-600 transition-colors" title="Duplicate"><Copy className="w-4 h-4" /></button><button onClick={() => handleDelete(product.id)} className="p-2 hover:bg-red-100 rounded-lg text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button></div></td>
                         </tr>
                       ))}
                     </tbody>

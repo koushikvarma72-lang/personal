@@ -6,7 +6,7 @@ export function NotFoundPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e3e6e6] via-purple-50 to-orange-50 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#e3e6e6] dark:from-gray-900 via-purple-50 dark:via-gray-900 to-orange-50 dark:to-gray-900 flex items-center justify-center px-4">
       <div className="text-center max-w-lg w-full">
 
         {/* Animated 404 Number */}
@@ -58,8 +58,8 @@ export function NotFoundPage() {
           className="space-y-3 mb-10"
           style={{ animation: 'fadeSlideUp 0.6s ease-out forwards', opacity: 0 }}
         >
-          <h1 className="text-3xl font-bold text-[#131921]">Page Not Found</h1>
-          <p className="text-gray-500 text-lg">
+          <h1 className="text-3xl font-bold text-[#131921] dark:text-white">Page Not Found</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-lg">
             Oops! This page seems to have wandered off like a lost thread.
           </p>
         </div>
@@ -72,7 +72,7 @@ export function NotFoundPage() {
           <Button
             onClick={() => navigate(-1)}
             variant="outline"
-            className="h-12 px-6 border-[#131921] text-[#131921] hover:bg-[#131921] hover:text-white gap-2"
+            className="h-12 px-6 border-[#131921] dark:border-gray-400 text-[#131921] dark:text-gray-200 hover:bg-[#131921] dark:hover:bg-gray-700 hover:text-white gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
             Go Back

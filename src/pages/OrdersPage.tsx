@@ -79,11 +79,11 @@ export function OrdersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e3e6e6] py-6">
+    <div className="min-h-screen bg-[#e3e6e6] dark:bg-gray-900 py-6">
       <div className="max-w-4xl mx-auto px-4">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111]">Your Orders</h1>
-          <p className="text-gray-500">Track and manage your purchases</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white">Your Orders</h1>
+          <p className="text-gray-500 dark:text-gray-400">Track and manage your purchases</p>
         </div>
 
         <div className="flex gap-3 mb-6">
@@ -128,7 +128,7 @@ export function OrdersPage() {
                   <Card key={order.id} className="overflow-hidden">
                     <CardContent className="p-0">
                       {/* Order Header */}
-                      <div className="bg-gray-50 p-4 flex flex-wrap items-center justify-between gap-4">
+                      <div className="bg-gray-50 dark:bg-gray-800/50 p-4 flex flex-wrap items-center justify-between gap-4">
                         <div className="flex flex-wrap gap-6">
                           <div>
                             <p className="text-xs text-gray-500">ORDER ID</p>
@@ -190,8 +190,8 @@ export function OrdersPage() {
 
                       {/* Expandable Order Details */}
                       {expandedOrder === order.id && (
-                        <div className="px-4 pb-4 bg-gray-50 border-t space-y-2 text-sm text-gray-600">
-                          <p className="font-medium text-gray-800 pt-3">Delivery Address</p>
+                        <div className="px-4 pb-4 bg-gray-50 dark:bg-gray-800/50 border-t dark:border-gray-700 space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                          <p className="font-medium text-gray-800 dark:text-gray-100 pt-3">Delivery Address</p>
                           <div className="flex items-start gap-2">
                             <MapPin className="w-4 h-4 mt-0.5 text-gray-400 flex-shrink-0" />
                             <span>
@@ -201,9 +201,9 @@ export function OrdersPage() {
                             </span>
                           </div>
                           <div className="flex gap-6 pt-1">
-                            <div><span className="text-gray-500">Subtotal: </span>₹{order.subtotal.toLocaleString()}</div>
-                            <div><span className="text-gray-500">Shipping: </span>{order.shipping === 0 ? 'FREE' : `₹${order.shipping}`}</div>
-                            <div><span className="text-gray-500">Tax: </span>₹{order.tax.toLocaleString()}</div>
+                            <div><span className="text-gray-500 dark:text-gray-400">Subtotal: </span>₹{order.subtotal.toLocaleString()}</div>
+                            <div><span className="text-gray-500 dark:text-gray-400">Shipping: </span>{order.shipping === 0 ? 'FREE' : `₹${order.shipping}`}</div>
+                            <div><span className="text-gray-500 dark:text-gray-400">Tax: </span>₹{order.tax.toLocaleString()}</div>
                           </div>
                         </div>
                       )}

@@ -23,16 +23,16 @@ export function Toast() {
   };
 
   const bgColors = {
-    success: 'bg-green-50 border-green-200',
-    error: 'bg-red-50 border-red-200',
-    info: 'bg-blue-50 border-blue-200',
+    success: 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-700',
+    error: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-700',
+    info: 'bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700',
   };
 
   return (
     <div className="fixed bottom-4 right-4 md:bottom-4 md:right-4 top-4 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 z-[100] animate-slide-in-right w-max max-w-[90vw]">
       <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border ${bgColors[toast.type]}`}>
         {icons[toast.type]}
-        <p className="text-sm font-medium text-gray-800">{toast.message}</p>
+        <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{toast.message}</p>
         <button 
           onClick={clearToast}
           className="p-1 hover:bg-black/5 rounded transition-colors"
