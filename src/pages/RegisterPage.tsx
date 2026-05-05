@@ -94,7 +94,7 @@ export function RegisterPage() {
           <div className="w-12 h-12 bg-gradient-to-br from-[#febd69] to-[#f90] rounded-xl flex items-center justify-center shadow-lg">
             <Store className="w-7 h-7 text-[#131921]" />
           </div>
-          <span className="text-2xl font-bold text-[#131921]">
+          <span className="text-2xl font-bold text-[#131921] dark:text-white">
             Saree<span className="text-[#febd69]">Bazaar</span>
           </span>
         </Link>
