@@ -53,7 +53,7 @@ export function WishlistPage() {
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {wishlistProducts.map(product => (
               <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300">
                 <Link to={`/product/${product.id}`}>

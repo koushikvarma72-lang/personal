@@ -281,7 +281,7 @@ export function ProductDetailPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col sm:grid sm:grid-cols-2 gap-3">
                 <Button
                   onClick={handleAddToCart}
                   size="lg"
@@ -470,7 +470,7 @@ export function ProductDetailPage() {
         {relatedProducts.length > 0 && (
           <div className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Related Products</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               {relatedProducts.map((relatedProduct) => (
                 <Card key={relatedProduct.id} className="group hover:shadow-lg transition-all">
                   <Link to={`/product/${relatedProduct.id}`}>
@@ -507,7 +507,7 @@ export function ProductDetailPage() {
         {recentlyViewed.length > 0 && (
           <div className="mt-8">
             <h2 className="text-2xl font-bold mb-4">Recently Viewed</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {recentlyViewed.map((p) => (
                 <Card key={p.id} className="group hover:shadow-lg transition-all">
                   <Link to={`/product/${p.id}`}>

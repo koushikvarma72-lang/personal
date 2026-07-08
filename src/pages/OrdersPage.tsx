@@ -128,15 +128,15 @@ export function OrdersPage() {
                   <Card key={order.id} className="overflow-hidden">
                     <CardContent className="p-0">
                       {/* Order Header */}
-                      <div className="bg-gray-50 dark:bg-gray-800/50 p-4 flex flex-wrap items-center justify-between gap-4">
-                        <div className="flex flex-wrap gap-6">
+                      <div className="bg-gray-50 dark:bg-gray-800/50 p-4">
+                        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 sm:gap-6">
                           <div>
                             <p className="text-xs text-gray-500">ORDER ID</p>
                             <p className="font-medium text-sm">{order.id.slice(-12).toUpperCase()}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">ORDERED ON</p>
-                            <p className="font-medium">
+                            <p className="font-medium text-sm">
                               {new Date(order.createdAt).toLocaleDateString('en-IN', {
                                 day: 'numeric', month: 'short', year: 'numeric'
                               })}
@@ -144,7 +144,7 @@ export function OrdersPage() {
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">TOTAL</p>
-                            <p className="font-medium">₹{order.total.toLocaleString()}</p>
+                            <p className="font-medium text-sm">₹{order.total.toLocaleString()}</p>
                           </div>
                           <div>
                             <p className="text-xs text-gray-500">STATUS</p>
@@ -200,7 +200,7 @@ export function OrdersPage() {
                               {order.shippingAddress.country}
                             </span>
                           </div>
-                          <div className="flex gap-6 pt-1">
+                          <div className="flex flex-wrap gap-4 pt-1">
                             <div><span className="text-gray-500 dark:text-gray-400">Subtotal: </span>₹{order.subtotal.toLocaleString()}</div>
                             <div><span className="text-gray-500 dark:text-gray-400">Shipping: </span>{order.shipping === 0 ? 'FREE' : `₹${order.shipping}`}</div>
                             <div><span className="text-gray-500 dark:text-gray-400">Tax: </span>₹{order.tax.toLocaleString()}</div>

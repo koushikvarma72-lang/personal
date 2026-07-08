@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CreditCard, Truck, Shield, Check, Lock, User, Package, Tag } from 'lucide-react';
-import { useCartStore, useAuthStore, useOrderStore, useUIStore } from '@/store';
+import { useCartStore, useAuthStore, useOrderStore, useUIStore, useProductStore } from '@/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { computeTotals, type DeliveryOption } from '@/lib/pricing';
 import type { Address } from '@/types';
 
 const VALID_COUPONS: Record<string, number> = {
@@ -23,6 +24,7 @@ export function CheckoutPage() {
   const { user } = useAuthStore();
   const { addOrder } = useOrderStore();
   const { showToast } = useUIStore();
+  const { getProductById } = useProductStore();
   
   const [activeStep, setActiveStep] = useState<string>('address');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,13 +42,11 @@ export function CheckoutPage() {
   const [deliveryOption, setDeliveryOption] = useState('standard');
   const [paymentMethod, setPaymentMethod] = useState('cod');
 
-  const baseDiscount = cart.total > 5000 ? Math.round(cart.total * 0.1) : 0;
-  const couponDiscount = appliedCoupon ? Math.round(cart.total * appliedCoupon.percent / 100) : 0;
-  const discount = baseDiscount + couponDiscount;
-  const standardDeliveryCost = cart.total > 999 ? 0 : 99;
-  const delivery = deliveryOption === 'express' ? 149 : standardDeliveryCost;
-  const tax = Math.round(cart.total * 0.05);
-  const finalTotal = cart.total - discount + delivery + tax;
+  const { baseDiscount, couponDiscount, standardDeliveryCost, delivery, tax, total: finalTotal } =
+    computeTotals(cart.total, {
+      couponPercent: appliedCoupon?.percent ?? 0,
+      deliveryOption: deliveryOption as DeliveryOption,
+    });
 
   const handleApplyCoupon = () => {
     const code = couponCode.trim().toUpperCase();
@@ -58,15 +58,44 @@ export function CheckoutPage() {
     }
   };
 
+  const isAddressComplete =
+    !!address.street.trim() && !!address.city.trim() && !!address.state.trim() && !!address.pincode.trim();
+
+  // Validate everything server-side of the accordion UI, so jumping straight to
+  // the "Review" step can't bypass address entry, auth, or stock checks.
+  const validateOrder = (): string | null => {
+    if (!user?.id) return 'Please sign in to place your order.';
+    if (cart.items.length === 0) return 'Your cart is empty.';
+    if (!isAddressComplete) return 'Please add a complete delivery address.';
+
+    for (const item of cart.items) {
+      const latest = getProductById(item.product.id) ?? item.product;
+      if (latest.status === 'out-of-stock' || latest.stock <= 0) {
+        return `"${item.product.name}" is out of stock.`;
+      }
+      if (item.quantity > latest.stock) {
+        return `Only ${latest.stock} unit(s) of "${item.product.name}" left in stock.`;
+      }
+    }
+    return null;
+  };
+
   const handlePlaceOrder = async () => {
+    const validationError = validateOrder();
+    if (validationError) {
+      showToast(validationError, 'error');
+      if (!isAddressComplete) setActiveStep('address');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const orderData = {
-        userId: user?.id || '',
+        userId: user!.id,
         items: cart.items.map(item => ({
           productId: item.product.id,
           productName: item.product.name,
-          productImage: item.product.images[0],
+          productImage: item.product.images[0] ?? '',
           price: item.product.price,
           quantity: item.quantity,
           total: item.product.price * item.quantity,
@@ -87,8 +116,8 @@ export function CheckoutPage() {
       clearCart();
       showToast('Order placed successfully!', 'success');
       navigate(`/order-confirmation/${orderId}`);
-    } catch {
-      showToast('Failed to place order. Please try again.', 'error');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to place order. Please try again.', 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -140,7 +169,7 @@ export function CheckoutPage() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="pb-6">
-                  <div className="pl-12">
+                  <div className="pl-0 sm:pl-12">
                     <p className="text-gray-600 flex items-center gap-2"><User className="w-4 h-4" /> Logged in as <span className="font-semibold text-gray-900">{user?.name}</span> ({user?.email})</p>
                   </div>
                 </AccordionContent>
@@ -160,16 +189,16 @@ export function CheckoutPage() {
                   )}
                 </AccordionTrigger>
                 <AccordionContent className="pb-6">
-                  <div className="pl-12 space-y-5">
+                  <div className="pl-0 sm:pl-12 space-y-5">
                     <div className="space-y-3">
                       <Label className="text-sm font-semibold">Street Address</Label>
                       <Input value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} placeholder="House/Flat No., Building Name, Street" />
                     </div>
-                    <div className="grid md:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-3"><Label className="text-sm font-semibold">City</Label><Input value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} /></div>
                       <div className="space-y-3"><Label className="text-sm font-semibold">State</Label><Input value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} /></div>
                     </div>
-                    <div className="grid md:grid-cols-2 gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div className="space-y-3"><Label className="text-sm font-semibold">PIN Code</Label><Input value={address.pincode} onChange={(e) => setAddress({ ...address, pincode: e.target.value })} /></div>
                       <div className="space-y-3"><Label className="text-sm font-semibold">Country</Label><Input value={address.country} disabled /></div>
                     </div>
@@ -179,7 +208,7 @@ export function CheckoutPage() {
                           return;
                         }
                         setActiveStep('delivery');
-                      }} className="mt-4 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-bold px-8">Use this address</Button>
+                      }} className="mt-4 bg-[#febd69] hover:bg-[#f90] text-[#131921] font-bold px-8 w-full sm:w-auto">Use this address</Button>
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -198,7 +227,7 @@ export function CheckoutPage() {
                   )}
                 </AccordionTrigger>
                 <AccordionContent className="pb-6">
-                  <div className="pl-12">
+                  <div className="pl-0 sm:pl-12">
                     <RadioGroup value={deliveryOption} onValueChange={setDeliveryOption} className="space-y-4">
                       <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${deliveryOption === 'standard' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                         <RadioGroupItem value="standard" />
@@ -236,7 +265,7 @@ export function CheckoutPage() {
                   )}
                 </AccordionTrigger>
                 <AccordionContent className="pb-6">
-                  <div className="pl-12">
+                  <div className="pl-0 sm:pl-12">
                     <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod} className="space-y-4">
                       <Label className={`flex items-center gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-[#febd69] bg-[#febd69]/5' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                         <RadioGroupItem value="cod" />
@@ -317,8 +346,8 @@ export function CheckoutPage() {
                 <h3 className="font-bold text-lg">Order Summary</h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-sm"><span className="text-gray-600">Items ({cart.itemCount}):</span><span>₹{cart.total.toLocaleString()}</span></div>
-                  {discount > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount:</span><span>-₹{discount.toLocaleString()}</span></div>}
-                  {appliedCoupon && <div className="flex justify-between text-sm text-green-600"><span>Coupon ({appliedCoupon.code}):</span><span>-{appliedCoupon.percent}%</span></div>}
+                  {baseDiscount > 0 && <div className="flex justify-between text-sm text-green-600"><span>Discount (10%):</span><span>-₹{baseDiscount.toLocaleString()}</span></div>}
+                  {appliedCoupon && couponDiscount > 0 && <div className="flex justify-between text-sm text-green-600"><span>Coupon ({appliedCoupon.code} · {appliedCoupon.percent}%):</span><span>-₹{couponDiscount.toLocaleString()}</span></div>}
                   <div className="flex justify-between text-sm"><span className="text-gray-600">Delivery:</span><span className={delivery === 0 ? 'text-green-600' : ''}>{delivery === 0 ? 'FREE' : `₹${delivery}`}</span></div>
                   <div className="flex justify-between text-sm"><span className="text-gray-600">Taxes (5%):</span><span>₹{tax.toLocaleString()}</span></div>
 

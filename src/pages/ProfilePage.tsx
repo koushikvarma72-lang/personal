@@ -29,14 +29,9 @@ export function ProfilePage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ name: formData.name })
-        .eq('id', user?.id);
-
-      if (error) throw new Error(error.message);
-
-      updateProfile({
+      // updateProfile now persists name/phone/address to the profiles table and
+      // updates local state, so we no longer write to Supabase directly here.
+      await updateProfile({
         name: formData.name,
         phone: formData.phone,
         address: {
@@ -156,7 +151,7 @@ export function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Full Name</Label>
                       <Input
@@ -196,7 +191,7 @@ export function ProfilePage() {
                     />
                   </div>
 
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label>City</Label>
                       <Input
@@ -236,27 +231,27 @@ export function ProfilePage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg gap-3">
                     <div>
                       <p className="font-medium">Change Password</p>
                       <p className="text-sm text-gray-500">A reset link will be sent to your email</p>
                     </div>
-                    <Button variant="outline" disabled={isSendingReset} onClick={handleChangePassword}>
+                    <Button variant="outline" disabled={isSendingReset} onClick={handleChangePassword} className="shrink-0">
                       {isSendingReset ? 'Sending...' : 'Send Reset Email'}
                     </Button>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg gap-3">
                     <div>
                       <p className="font-medium">Email Notifications</p>
                       <p className="text-sm text-gray-500">support@sareebazaar.com for preferences</p>
                     </div>
-                    <a href="mailto:support@sareebazaar.com?subject=Email Notification Preferences">
-                      <Button variant="outline">Manage</Button>
+                    <a href="mailto:support@sareebazaar.com?subject=Email Notification Preferences" className="shrink-0">
+                      <Button variant="outline" className="w-full sm:w-auto">Manage</Button>
                     </a>
                   </div>
                   
-                  <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg gap-3">
                     <div>
                       <p className="font-medium text-red-600">Delete Account</p>
                       <p className="text-sm text-gray-500">Permanently delete your account and all data</p>
@@ -264,7 +259,7 @@ export function ProfilePage() {
                     <Button
                       variant="outline"
                       disabled={isDeletingAccount}
-                      className="text-red-600 hover:bg-red-50"
+                      className="text-red-600 hover:bg-red-50 shrink-0"
                       onClick={handleDeleteAccount}
                     >
                       {isDeletingAccount ? 'Deleting...' : 'Delete'}

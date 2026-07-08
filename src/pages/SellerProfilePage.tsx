@@ -64,7 +64,7 @@ export function SellerProfilePage() {
 
         {/* Products */}
         <h2 className="text-xl font-bold text-[#0f1111] dark:text-white mb-4">Products by {sellerName}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {sellerProducts.map(product => (
             <Card key={product.id} className="group overflow-hidden hover:shadow-xl transition-all duration-300">
               <Link to={`/product/${product.id}`}>

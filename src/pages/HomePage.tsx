@@ -106,7 +106,7 @@ export function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-[600px] overflow-hidden">
+      <section className="relative min-h-[500px] md:h-[600px] overflow-hidden">
         {/* Background Gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700">
           <div className="absolute inset-0 opacity-30">
@@ -123,7 +123,7 @@ export function HomePage() {
                 <Sparkles className="w-3 h-3 mr-1" />
                 Summer Collection 2026
               </Badge>
-              <h1 className="text-4xl md:text-6xl font-bold leading-tight">
+              <h1 className="text-3xl md:text-6xl font-bold leading-tight">
                 Discover the Beauty of{' '}
                 <span className="text-[#febd69]">Indian Tradition</span>
               </h1>
@@ -153,7 +153,7 @@ export function HomePage() {
               </div>
               
               {/* Stats */}
-              <div className="flex gap-8 pt-4">
+              <div className="flex gap-6 pt-4 flex-wrap">
                 <div>
                   <p className="text-3xl font-bold text-[#febd69]">10K+</p>
                   <p className="text-sm text-white/70">Happy Customers</p>
@@ -197,7 +197,7 @@ export function HomePage() {
       {/* Features Bar */}
       <section className="bg-white dark:bg-gray-800 py-6 border-b dark:border-gray-700">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { icon: Truck, text: 'Free Delivery', subtext: 'On orders above ₹999' },
               { icon: Shield, text: 'Authentic Products', subtext: '100% Genuine guarantee' },
@@ -228,7 +228,7 @@ export function HomePage() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {categories.map((category) => (
               <Link
                 key={category.id}
@@ -276,7 +276,7 @@ export function HomePage() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             {deals.map((deal) => (
               <Link key={deal.id} to={`/product/${deal.id}`} className="group">
               <Card className="overflow-hidden hover:shadow-xl transition-all duration-300">
@@ -408,7 +408,7 @@ export function HomePage() {
             </Link>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {sarees.length === 0 ? (
               <div className="col-span-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-10 text-center">
                 <Store className="w-12 h-12 mx-auto mb-3 text-gray-300" />
@@ -488,7 +488,7 @@ export function HomePage() {
         <section className="py-12 px-4 bg-white dark:bg-gray-800">
           <div className="max-w-7xl mx-auto">
             <h2 className="text-2xl md:text-3xl font-bold text-[#0f1111] dark:text-white mb-6">Recently Viewed</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {recentlyViewed.map(product => (
                 <Card key={product.id} className="group hover:shadow-lg transition-all overflow-hidden">
                   <Link to={`/product/${product.id}`}>

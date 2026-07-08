@@ -29,27 +29,37 @@ function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user && !useAuthStore.getState().isAuthenticated) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-        const email = session.user.email ?? '';
-        useAuthStore.setState({
-          isAuthenticated: true,
-          user: {
-            id: session.user.id,
-            email,
-            name: profile?.name || session.user.user_metadata?.full_name || email.split('@')[0],
-            role: profile?.role || 'buyer',
-            avatar:
-              session.user.user_metadata?.avatar_url ||
-              profile?.avatar ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-            createdAt: new Date(session.user.created_at || Date.now()),
-          },
-        });
+      const alreadyAuthed = useAuthStore.getState().isAuthenticated;
+      if (session?.user) {
+        if (!alreadyAuthed) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+          const email = session.user.email ?? '';
+          useAuthStore.setState({
+            isAuthenticated: true,
+            user: {
+              id: session.user.id,
+              email,
+              name: profile?.name || session.user.user_metadata?.full_name || email.split('@')[0],
+              role: profile?.role || 'buyer',
+              avatar:
+                session.user.user_metadata?.avatar_url ||
+                profile?.avatar ||
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+              phone: profile?.phone || undefined,
+              address: profile?.address || undefined,
+              createdAt: new Date(session.user.created_at || Date.now()),
+            },
+          });
+        }
+      } else if (alreadyAuthed) {
+        // Persisted auth from localStorage but no live Supabase session
+        // (e.g. the token expired). Clear the stale state so the UI doesn't
+        // show the user as logged in.
+        useAuthStore.setState({ user: null, isAuthenticated: false });
       }
     });
 
@@ -74,19 +84,24 @@ function App() {
             .maybeSingle();
 
           const email = session.user.email ?? '';
-          authStore.updateProfile({
-            id: session.user.id,
-            email,
-            name: profile?.name || session.user.user_metadata?.full_name || email.split('@')[0],
-            role: profile?.role || 'buyer',
-            avatar:
-              session.user.user_metadata?.avatar_url ||
-              profile?.avatar ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-            createdAt: new Date(session.user.created_at || Date.now()),
+          // Hydrate local state only — do NOT call updateProfile here, since that
+          // now persists back to the DB and would overwrite the fetched profile.
+          useAuthStore.setState({
+            isAuthenticated: true,
+            user: {
+              id: session.user.id,
+              email,
+              name: profile?.name || session.user.user_metadata?.full_name || email.split('@')[0],
+              role: profile?.role || 'buyer',
+              avatar:
+                session.user.user_metadata?.avatar_url ||
+                profile?.avatar ||
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+              phone: profile?.phone || undefined,
+              address: profile?.address || undefined,
+              createdAt: new Date(session.user.created_at || Date.now()),
+            },
           });
-          // Mark as authenticated in the store
-          useAuthStore.setState({ isAuthenticated: true });
         }
       } else if (event === 'SIGNED_OUT') {
         useAuthStore.setState({ user: null, isAuthenticated: false });

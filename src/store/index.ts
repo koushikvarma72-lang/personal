@@ -26,7 +26,7 @@ interface AuthState {
   loginWithProvider: (provider: 'google' | 'facebook') => Promise<void>;
   register: (name: string, email: string, password: string, role: 'buyer' | 'seller') => Promise<boolean>;
   logout: () => void;
-  updateProfile: (updates: Partial<User>) => void;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
   switchRole: (newRole: 'buyer' | 'seller') => Promise<void>;
 }
 
@@ -74,6 +74,8 @@ export const useAuthStore = create<AuthState>()(
           name: profileData?.name || email.split('@')[0],
           role: profileData.role,
           avatar: profileData?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+          phone: profileData?.phone || undefined,
+          address: profileData?.address || undefined,
           createdAt: new Date(data.user.created_at || Date.now()),
         };
 
@@ -147,11 +149,36 @@ export const useAuthStore = create<AuthState>()(
         set({ user: null, isAuthenticated: false });
       },
 
-      updateProfile: (updates) => {
+      updateProfile: async (updates) => {
         const { user } = get();
-        if (user) {
-          set({ user: { ...user, ...updates } });
+        if (!user) return;
+
+        // Columns that exist in the base schema — a failure here is a real error.
+        const core: Record<string, unknown> = {};
+        if (updates.name !== undefined) core.name = updates.name;
+        if (updates.avatar !== undefined) core.avatar = updates.avatar;
+        if (Object.keys(core).length > 0) {
+          const { error } = await supabase.from('profiles').update(core).eq('id', user.id);
+          if (error) throw new Error(error.message);
         }
+
+        // phone/address are added by security-rls-and-profile.sql. Persist them
+        // best-effort so profile edits still succeed if that migration hasn't
+        // been run yet (the values are always kept in local state below).
+        const extra: Record<string, unknown> = {};
+        if (updates.phone !== undefined) extra.phone = updates.phone;
+        if (updates.address !== undefined) extra.address = updates.address;
+        if (Object.keys(extra).length > 0) {
+          const { error } = await supabase.from('profiles').update(extra).eq('id', user.id);
+          if (error) {
+            console.warn(
+              'Could not persist phone/address — run security-rls-and-profile.sql to add these columns:',
+              error.message
+            );
+          }
+        }
+
+        set({ user: { ...user, ...updates } });
       },
 
       switchRole: async (newRole: 'buyer' | 'seller') => {
@@ -480,7 +507,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       },
 
       addOrder: async (orderData) => {
-        const { data: order } = await supabase.from('orders').insert([{
+        const { data: order, error: orderError } = await supabase.from('orders').insert([{
           user_id: orderData.userId,
           subtotal: orderData.subtotal,
           shipping: orderData.shipping,
@@ -491,33 +518,42 @@ export const useOrderStore = create<OrderState>((set, get) => ({
           shipping_address: orderData.shippingAddress,
         }]).select().single();
 
-        if (order) {
-          const itemsToInsert = orderData.items.map(item => ({
-            order_id: order.id,
-            product_id: item.productId,
-            product_name: item.productName,
-            product_image: item.productImage,
-            price: item.price,
-            quantity: item.quantity,
-            total: item.total,
-            seller_id: item.sellerId,
-            status: item.status
-          }));
-          await supabase.from('order_items').insert(itemsToInsert);
-
-          // Decrement stock for each ordered product
-          for (const item of orderData.items) {
-            const product = useProductStore.getState().products.find(p => p.id === item.productId);
-            if (product) {
-              const newStock = Math.max(0, product.stock - item.quantity);
-              await supabase.from('products').update({ stock: newStock }).eq('id', item.productId);
-            }
-          }
-
-          get().fetchOrders();
-          return order.id;
+        if (orderError || !order) {
+          throw new Error(orderError?.message || 'Could not create order.');
         }
-        return undefined;
+
+        const itemsToInsert = orderData.items.map(item => ({
+          order_id: order.id,
+          product_id: item.productId,
+          product_name: item.productName,
+          product_image: item.productImage || '', // product_image is NOT NULL; never send undefined/null
+          price: item.price,
+          quantity: item.quantity,
+          total: item.total,
+          seller_id: item.sellerId,
+          status: item.status
+        }));
+
+        const { error: itemsError } = await supabase.from('order_items').insert(itemsToInsert);
+        if (itemsError) {
+          // Roll back the orphaned order row so we never report success for an
+          // order that has no line items.
+          await supabase.from('orders').delete().eq('id', order.id);
+          throw new Error('Could not save order items. Please try again.');
+        }
+
+        // Decrement stock for each ordered product (best-effort; the order is
+        // already committed at this point).
+        for (const item of orderData.items) {
+          const product = useProductStore.getState().products.find(p => p.id === item.productId);
+          if (product) {
+            const newStock = Math.max(0, product.stock - item.quantity);
+            await supabase.from('products').update({ stock: newStock }).eq('id', item.productId);
+          }
+        }
+
+        await get().fetchOrders();
+        return order.id;
       },
 
       updateOrderStatus: async (orderId, status) => {

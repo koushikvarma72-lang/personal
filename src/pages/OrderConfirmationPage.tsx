@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { CheckCircle, Package, Truck, MapPin, ArrowRight } from 'lucide-react';
 import { useOrderStore, useAuthStore } from '@/store';
@@ -7,10 +8,17 @@ import { Separator } from '@/components/ui/separator';
 
 export function OrderConfirmationPage() {
   const { orderId } = useParams<{ orderId: string }>();
-  const { orders } = useOrderStore();
+  const { orders, fetchOrders } = useOrderStore();
   const { user } = useAuthStore();
 
   const order = orders.find(o => o.id === orderId);
+
+  // On a hard refresh or when arriving via a direct link, the order store may
+  // not be populated yet — fetch it so the items/summary aren't silently blank.
+  useEffect(() => {
+    if (!order) fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderId]);
 
   const estimatedDelivery = new Date();
   estimatedDelivery.setDate(estimatedDelivery.getDate() + 5);

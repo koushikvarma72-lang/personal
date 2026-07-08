@@ -85,7 +85,10 @@ CREATE TABLE IF NOT EXISTS public.order_items (
   status TEXT DEFAULT 'pending'
 );
 
--- Turn off RLS for simplicity during initial testing (Can enable later for security)
+-- RLS is left OFF here for the very first setup only.
+-- !! SECURITY: Do NOT ship with RLS off — with the public anon key, anyone can
+-- read/modify every profile, product and order. Run security-rls-and-profile.sql
+-- (in this repo) to enable RLS with proper per-user policies before going live.
 ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.products DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders DISABLE ROW LEVEL SECURITY;

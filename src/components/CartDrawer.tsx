@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Plus, Minus, ShoppingBag, Trash2, ArrowRight } from 'lucide-react';
 import { useCartStore, useAuthStore, useUIStore } from '@/store';
+import { computeTotals, FREE_DELIVERY_THRESHOLD } from '@/lib/pricing';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
@@ -21,9 +22,7 @@ export function CartDrawer() {
     }
   };
 
-  const discount = cart.total > 5000 ? Math.round(cart.total * 0.1) : 0;
-  const delivery = cart.total > 999 ? 0 : 99;
-  const finalTotal = cart.total - discount + delivery;
+  const { discount, delivery, tax, total: finalTotal } = computeTotals(cart.total);
 
   return (
     <Sheet open={isCartOpen} onOpenChange={setCartOpen}>
@@ -154,21 +153,21 @@ export function CartDrawer() {
               
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Taxes (5%)</span>
-                <span className="font-medium">₹{Math.round(cart.total * 0.05).toLocaleString()}</span>
+                <span className="font-medium">₹{tax.toLocaleString()}</span>
               </div>
-              
-              {cart.total < 999 && (
+
+              {cart.total < FREE_DELIVERY_THRESHOLD && (
                 <p className="text-xs text-orange-600 bg-orange-50 p-2 rounded mt-2">
-                  Add items worth ₹{(999 - cart.total).toLocaleString()} more for FREE delivery
+                  Add items worth ₹{(FREE_DELIVERY_THRESHOLD - cart.total).toLocaleString()} more for FREE delivery
                 </p>
               )}
-              
+
               <Separator className="my-3" />
-              
+
               <div className="flex justify-between items-center pb-2">
                 <span className="text-lg font-bold">Total Price</span>
                 <span className="text-2xl font-black text-[#b12704]">
-                  ₹{(finalTotal + Math.round(cart.total * 0.05)).toLocaleString()}
+                  ₹{finalTotal.toLocaleString()}
                 </span>
               </div>
 

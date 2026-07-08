@@ -235,7 +235,7 @@ export function SellerDashboard() {
 
           {/* ANALYTICS TAB */}
           <TabsContent value="analytics" className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
               <Card><CardContent className="p-6 flex items-center gap-4"><div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center"><Package className="w-6 h-6 text-blue-600" /></div><div><p className="text-sm text-gray-500 font-medium">Total Products</p><p className="text-2xl font-bold">{sellerProducts.length}</p></div></CardContent></Card>
               <Card><CardContent className="p-6 flex items-center gap-4"><div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center"><ShoppingBag className="w-6 h-6 text-green-600" /></div><div><p className="text-sm text-gray-500 font-medium">Total Orders</p><p className="text-2xl font-bold">{totalOrders}</p></div></CardContent></Card>
               <Card><CardContent className="p-6 flex items-center gap-4"><div className="w-12 h-12 bg-[#febd69]/20 rounded-lg flex items-center justify-center"><DollarSign className="w-6 h-6 text-[#febd69] font-bold" /></div><div><p className="text-sm text-gray-500 font-medium">Total Revenue</p><p className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</p></div></CardContent></Card>
