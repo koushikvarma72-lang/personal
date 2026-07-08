@@ -1,6 +1,16 @@
 const { Client } = require('pg');
 
-const uri = 'postgresql://postgres:Koushik2003*@db.xoterbjnkinehavteitl.supabase.co:5432/postgres';
+// NEVER hardcode the DB password. Provide it at runtime, e.g.:
+//   DATABASE_URL="postgresql://postgres:PASSWORD@db.<ref>.supabase.co:5432/postgres" node scripts/initDB.cjs
+const uri = process.env.DATABASE_URL;
+
+if (!uri) {
+  console.error(
+    'Missing DATABASE_URL. Run with:\n' +
+    '  DATABASE_URL="postgresql://postgres:PASSWORD@db.<ref>.supabase.co:5432/postgres" node scripts/initDB.cjs'
+  );
+  process.exit(1);
+}
 
 const client = new Client({
   connectionString: uri,
