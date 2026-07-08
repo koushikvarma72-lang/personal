@@ -1,0 +1,15 @@
+# Netlify build + SPA routing config.
+# Netlify does NOT read vercel.json, so the client-side routing fallback has to
+# live here (and/or in public/_redirects).
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Serve index.html for any path that isn't a real file, so react-router routes
+# (e.g. /products, /product/:id, /order-confirmation/:id) work on direct load
+# and refresh instead of returning Netlify's 404.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
