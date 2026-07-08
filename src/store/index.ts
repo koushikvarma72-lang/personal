@@ -99,6 +99,9 @@ export const useAuthStore = create<AuthState>()(
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
+          // Passed through to the handle_new_user() DB trigger, which creates
+          // the profile row (it reads name/role from raw_user_meta_data).
+          options: { data: { name, role } },
         });
         if (error) {
           // 422 = email already registered
@@ -114,19 +117,18 @@ export const useAuthStore = create<AuthState>()(
         }
 
         if (data.user) {
-          // ✅ INSERT into profiles table
-          const { error: profileError } = await supabase.from('profiles').insert([
-            {
-              id: data.user.id,
-              name,
-              role,
-              avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-              email
-            }
-          ]);
+          const avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`;
+          // The handle_new_user() trigger already inserted this profile row from
+          // the signup metadata above. Upsert (NOT insert) so we set the avatar
+          // and confirm name/role without a duplicate-key error on profiles.id.
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .upsert([{ id: data.user.id, name, role, avatar, email }]);
 
           if (profileError) {
-            throw new Error(profileError.message);
+            // Non-fatal: the trigger already created the row, so registration
+            // still succeeds even if this enrichment write is blocked.
+            console.warn('Profile upsert after signup failed (trigger likely created it):', profileError.message);
           }
 
           const user: User = {
@@ -134,7 +136,7 @@ export const useAuthStore = create<AuthState>()(
             email: data.user.email!,
             name,
             role,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+            avatar,
             createdAt: new Date(data.user.created_at || Date.now()),
           };
 
